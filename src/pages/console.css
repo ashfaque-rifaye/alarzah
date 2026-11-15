@@ -1,0 +1,49 @@
+.c-shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; background: radial-gradient(70% 50% at 80% -10%, rgba(255,193,94,.08), transparent), radial-gradient(60% 50% at 10% 0%, rgba(59,232,224,.08), transparent), var(--bg); }
+.c-rail { position: sticky; top: 0; height: 100vh; padding: 22px 16px; display: flex; flex-direction: column; gap: 6px; border-right: 1px solid var(--line); background: rgba(255,255,255,.015); }
+.c-brand { display: flex; gap: 10px; align-items: center; margin-bottom: 22px; font-family: var(--display); }
+.c-navi { position: relative; display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; color: var(--muted); font-size: 14px; text-align: left; }
+.c-navi.on { color: var(--ink); }
+.c-navi > span { position: relative; z-index: 1; }
+.c-navglow { position: absolute; inset: 0; border-radius: 14px; background: rgba(59,232,224,.1); border: 1px solid rgba(59,232,224,.3); }
+.c-badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,.08); }
+.c-note { font-size: 12px; color: var(--dim); padding: 12px; border-radius: 14px; border: 1px dashed var(--line2); margin-bottom: 10px; }
+.c-main { padding: 26px 28px 40px; min-width: 0; }
+.c-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.c-queue { display: grid; grid-template-columns: 300px 1fr; gap: 14px; align-items: start; }
+.c-list { padding: 16px; max-height: calc(100vh - 52px); overflow: auto; position: sticky; top: 26px; }
+.c-list h2 { font-size: 20px; }
+.c-search { width: 100%; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--line2); background: rgba(0,0,0,.25); color: var(--ink); margin-bottom: 8px; font: inherit; font-size: 13px; }
+.c-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 14px; border: 1px solid transparent; }
+.c-item:hover { background: rgba(255,255,255,.04); }
+.c-item.on { background: rgba(59,232,224,.08); border-color: rgba(59,232,224,.3); }
+.c-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.c-ok { color: var(--mint); font-weight: 700; }
+.c-detail { display: grid; gap: 14px; min-width: 0; }
+.c-card { padding: 20px; min-width: 0; }
+.c-recs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.c-rec { padding: 14px; border-radius: 16px; border: 1px solid; background: rgba(255,255,255,.025); }
+.c-grid2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; }
+.c-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.c-table td, .c-table th { padding: 9px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.c-table th { color: var(--dim); font-weight: 500; font-size: 12px; }
+.c-ai { margin-top: 16px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(157,139,255,.35); background: rgba(157,139,255,.07); font-size: 13px; }
+.c-fair { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+.c-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-top: 16px; }
+.c-kpi { padding: 18px; display: grid; gap: 6px; }
+.c-kpi b { font: 600 30px var(--display); letter-spacing: -0.03em; }
+.c-kpi span { font-size: 12.5px; }
+.c-ci { position: relative; height: 10px; border-radius: 6px; background: rgba(255,255,255,.06); margin-top: 6px; }
+.c-ci div { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, rgba(59,232,224,.35), rgba(124,245,184,.35)); }
+.c-ci i { position: absolute; top: -3px; width: 3px; height: 16px; border-radius: 2px; background: var(--ink); transform: translateX(-1px); }
+.progress { height: 6px; border-radius: 6px; background: rgba(255,255,255,.07); overflow: hidden; }
+.progress > div { height: 100%; background: var(--thermal); border-radius: 6px; }
+@media (max-width: 1200px) { .c-kpis { grid-template-columns: repeat(2, 1fr); } .c-grid2, .c-fair { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .c-shell { grid-template-columns: 1fr; }
+  .c-rail { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; border-right: 0; border-bottom: 1px solid var(--line); }
+  .c-rail .c-note, .c-rail > a.btn { display: none; }
+  .c-brand { margin: 0 12px 0 0; }
+  .c-queue { grid-template-columns: 1fr; }
+  .c-list { position: static; max-height: 320px; }
+  .c-main { padding: 16px; }
+}

@@ -1,172 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Alarzah · Men's Reproductive Health</title>
-<meta name="description" content="Alarzah: a private, low-friction front door to men's reproductive health. Future Health Digital Innovation Challenge, Fertility Challenge 01. Prototype in progress.">
-<style>
-:root{--bg:#f7f5f2;--card:#fff;--ink:#2b2522;--muted:#6b615c;--accent:#0f6e6e;--accent2:#e8f3f2;--warn:#b4441f;--warnbg:#fbece6;--ok:#2f7d32;--line:#e4ded8}
-@media (prefers-color-scheme:dark){:root{--bg:#161413;--card:#211e1c;--ink:#f1ece8;--muted:#b3a9a3;--accent:#5cc3c0;--accent2:#1f3332;--warn:#ff9a73;--warnbg:#3a2219;--ok:#7fd083;--line:#3a3431}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-.wrap{max-width:960px;margin:0 auto;padding:24px 16px 64px}
-header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
-.brand{font-size:28px;font-weight:700;letter-spacing:.5px}.brand span{color:var(--accent)}
-.tag{color:var(--muted);font-size:14px}
-.pill{display:inline-block;background:var(--accent2);color:var(--accent);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:600}
-.banner{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px 14px;font-size:14px;margin:16px 0}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:16px 0}
-h2{margin:0 0 8px;font-size:20px}h3{margin:16px 0 6px;font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-label{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin:6px 0;cursor:pointer}
-label:hover{border-color:var(--accent)}input[type=checkbox],input[type=radio]{margin-right:8px}
-button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:12px 18px;font-size:16px;font-weight:600;cursor:pointer}
-button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-canvas{width:100%;height:220px;background:var(--bg);border-radius:10px}
-.tier{border-radius:12px;padding:14px;margin:8px 0;border:1px solid var(--line)}
-.tier.urgent{background:var(--warnbg);border-color:var(--warn)}
-.tier b{display:block}
-.small{font-size:13px;color:var(--muted)}
-.lang{font-family:"Segoe UI",Tahoma,Arial,sans-serif}
-footer{margin-top:32px;color:var(--muted);font-size:13px}
-a{color:var(--accent)}
-</style>
+<meta name="description" content="Alarzah: a private, low-friction front door to men's reproductive health. Private check-in, at-home sensing and at-home sample collection, with clinician-reviewed referrals." />
+<meta name="theme-color" content="#04070b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Alarzah" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body>
-<div class="wrap">
-<header>
-  <div><div class="brand">Alar<span>zah</span></div><div class="tag">A cooler, quieter front door to men's reproductive health</div></div>
-  <div class="row"><span class="pill">Guest mode · no login</span><span class="pill">Fertility · Challenge 01</span></div>
-</header>
-
-<div class="banner"><b>Prototype in progress.</b> This is the live guest-mode preview for the Future Health Digital Innovation Challenge. All data is synthetic, nothing you enter leaves this page, and nothing here is medical advice. Full build due 20 Nov 2026.</div>
-
-<div class="card">
-  <h2>1 · Private check-in <span class="small">(anonymous, stays on your device)</span></h2>
-  <p class="small">Answer what you're comfortable with. No name, no ID, no account.</p>
-  <div class="grid">
-    <div>
-      <h3>Right now</h3>
-      <label><input type="checkbox" id="pain">Sudden, severe pain or swelling in a testicle</label>
-      <label><input type="checkbox" id="lump">A new lump in a testicle</label>
-    </div>
-    <div>
-      <h3>History</h3>
-      <label><input type="checkbox" id="udt">Undescended testicle as a child</label>
-      <label><input type="checkbox" id="mumps">Mumps affecting the testicles, or past testicular injury/surgery</label>
-    </div>
-    <div>
-      <h3>Medicines and gym</h3>
-      <label><input type="checkbox" id="aas">Testosterone or anabolic steroids not prescribed to me (now or in the last year)</label>
-    </div>
-    <div>
-      <h3>Daily life</h3>
-      <label><input type="checkbox" id="heat">Hot work, or more than 6 hours a day sitting or driving</label>
-      <label><input type="checkbox" id="smoke">Smoking or shisha</label>
-      <label><input type="checkbox" id="metab">Overweight, or diabetes</label>
-    </div>
-  </div>
-  <h3>Planning a family?</h3>
-  <div class="row">
-    <label><input type="radio" name="ttc" value="0" checked>Not trying / not now</label>
-    <label><input type="radio" name="ttc" value="1">Trying for less than 12 months</label>
-    <label><input type="radio" name="ttc" value="2">Trying for 12 months or more</label>
-  </div>
-</div>
-
-<div class="card">
-  <h2>2 · Alarzah Clip readings <span class="small">(simulated 7-day wear)</span></h2>
-  <p class="small">The Clip has two skin temperature sensors (left and right), an outside-temperature sensor and a motion sensor. No camera. Pick a simulated week to see what the phone computes.</p>
-  <div class="row">
-    <button class="ghost" data-trace="normal">Typical week</button>
-    <button class="ghost" data-trace="heat">High heat load</button>
-    <button class="ghost" data-trace="asym">Left/right pattern</button>
-    <button class="ghost" data-trace="poor">Clip barely worn</button>
-  </div>
-  <canvas id="chart" width="900" height="220" aria-label="Simulated scrotal skin temperature, left and right, over 7 days"></canvas>
-  <div id="signals" class="small" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-  <h2>3 · Your next step</h2>
-  <button id="go">Show my next step</button>
-  <div id="out" style="margin-top:12px"></div>
-  <p class="small">Every referral is reviewed by a clinician before it is sent. This is screening support, not a diagnosis.</p>
-</div>
-
-<div class="card">
-  <h2>Your data</h2>
-  <ul>
-    <li>Stays on your phone by default. Shared only when you create a one-time link (for your wife or your doctor).</li>
-    <li><b>Never</b> used for insurance, employment, marriage or visa paperwork. Never sold.</li>
-    <li>Lab orders carry an anonymous code, not your name. Delete everything with one button.</li>
-  </ul>
-  <p class="lang" dir="rtl" lang="ar">بياناتك تبقى على هاتفك. لا تُشارك إلا بإذنك.</p>
-</div>
-
-<footer>
-  Alarzah · Future Health Digital Innovation Challenge 2026 · Fertility Challenge 01: Male Reproductive Health ·
-  <a href="demo.html">Demo video</a> · Prototype preview, synthetic data only.
-</footer>
-</div>
-
-<script>
-const $=id=>document.getElementById(id);
-let trace='normal', sig={};
-function rnd(seed){let s=seed;return()=>{s=(s*9301+49297)%233280;return s/233280}}
-function makeTrace(kind){
-  const r=rnd(7),L=[],R=[],up=[];
-  for(let h=0;h<24*7;h++){
-    const hr=h%24, upright=hr>=7&&hr<23; up.push(upright);
-    let base=upright?34.2:33.2, n=(r()-.5)*.3;
-    if(kind==='heat'&&upright&&(hr>=8&&hr<18)) base+=1.3;
-    let l=base+n, rr=base+(r()-.5)*.3;
-    if(kind==='asym'&&upright) l+=1.0;
-    if(kind==='poor'&&(h%24>2)) {l=null;rr=null}
-    L.push(l);R.push(rr);
-  }
-  return {L,R,up};
-}
-function median(a){a=a.filter(v=>v!=null).sort((x,y)=>x-y);if(!a.length)return null;const m=a.length>>1;return a.length%2?a[m]:(a[m-1]+a[m])/2}
-function analyse(t){
-  const worn=t.L.filter(v=>v!=null).length;
-  if(worn<24*3*0.6) return {status:'insufficient',worn};
-  const dayL=[],dayR=[],nightL=[],dU=[],dS=[];
-  t.L.forEach((l,i)=>{if(l==null)return;const r=t.R[i];if(t.up[i]){dayL.push(l);dayR.push(r);dU.push(l-r)}else{nightL.push(l);dS.push(l-r)}});
-  const night=median(nightL), mDay=median(dayL.concat(dayR));
-  const above=dayL.concat(dayR).filter(v=>v>night+1).length/2;
-  return {status:'ok',worn,mDay,night,heatHours:above,diffUp:median(dU),diffLying:median(dS)};
-}
-function draw(t){
-  const c=$('chart'),x=c.getContext('2d'),W=c.width,H=c.height,css=getComputedStyle(document.documentElement);
-  x.clearRect(0,0,W,H);const lo=32,hi=36.5,px=i=>10+i*(W-20)/(t.L.length-1),py=v=>H-10-(v-lo)/(hi-lo)*(H-30);
-  x.font='12px system-ui';x.fillStyle=css.getPropertyValue('--muted');x.fillText('°C  (left = teal, right = orange)',12,14);
-  [[t.L,css.getPropertyValue('--accent')],[t.R,'#d9822b']].forEach(([s,col])=>{x.strokeStyle=col;x.lineWidth=2;x.beginPath();let pen=false;s.forEach((v,i)=>{if(v==null){pen=false;return}if(!pen){x.moveTo(px(i),py(v));pen=true}else x.lineTo(px(i),py(v))});x.stroke()});
-}
-function render(){
-  const t=makeTrace(trace);draw(t);sig=analyse(t);
-  $('signals').innerHTML=sig.status!=='ok'?`<b>No result.</b> The Clip was worn about ${sig.worn} hours; we need at least 3 days. A missing reading never counts as normal.`:
-  `Median daytime temperature <b>${sig.mDay.toFixed(1)} °C</b> · hours above your night baseline + 1 °C: <b>${sig.heatHours.toFixed(0)}</b> · left minus right when upright <b>${sig.diffUp.toFixed(2)} °C</b>, lying down <b>${sig.diffLying.toFixed(2)} °C</b>. <i>Recorded observations from simulated data; calculated by fixed rules, not AI.</i>`;
-}
-document.querySelectorAll('[data-trace]').forEach(b=>b.onclick=()=>{trace=b.dataset.trace;render()});
-$('go').onclick=()=>{
-  const v=id=>$(id).checked, ttc=+document.querySelector('input[name=ttc]:checked').value, out=[];
-  if(v('pain')) out.push(['urgent','Go to an emergency department now','Sudden severe testicular pain can be a twisted testicle, which needs treatment within hours.']);
-  if(v('lump')) out.push(['urgent','See a urologist within days','A new lump needs prompt examination.']);
-  if(ttc===2) out.push(['','Fertility service','After 12 months of trying, both partners should be assessed together.']);
-  const pattern=sig.status==='ok'&&sig.diffUp>=0.6&&sig.diffLying<0.3;
-  if(pattern||v('udt')) out.push(['','Andrology / urology','A '+(pattern?'left/right temperature pattern that appears when upright and fades lying down':'history of undescended testicle')+' is worth a short clinical examination. This is not a diagnosis.']);
-  if(v('aas')) out.push(['','Family physician (confidential)','Non-prescribed testosterone or steroids can stop sperm production. This is often reversible; a doctor can help you stop safely.']);
-  if(v('metab')||v('mumps')) out.push(['','Family physician','Weight, diabetes and past testicular problems are worth a routine check.']);
-  if(ttc>=1||out.length) out.push(['','Semen analysis, collected at home','Use the Alarzah Pod: collect at home, keep it between 20 and 37 °C, and deliver to the lab within the time limit, with an anonymous order code.']);
-  const heat=sig.status==='ok'&&sig.heatHours>20;
-  if(heat||v('heat')||v('smoke')) out.push(['','Self-care plan + re-test in 6 weeks',(heat?'Your heat load was high. ':'')+'Breaks from sitting, looser clothing, a ventilated seat, and stopping smoking or shisha can help.']);
-  if(!out.length) out.push(['','No action needed now','Nothing in your answers needs a referral. You can re-check any time.']);
-  if(sig.status!=='ok') out.push(['','Clip result missing','Wear the Clip for at least 3 days to add the temperature signals.']);
-  $('out').innerHTML=out.map(([c,t,d])=>`<div class="tier ${c}"><b>${t}</b>${d}</div>`).join('');
-};
-render();
-</script>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
