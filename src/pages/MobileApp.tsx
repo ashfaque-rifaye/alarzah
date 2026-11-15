@@ -34,7 +34,30 @@ const fresh = (): State => ({
   pod: 'none', breach: false, audit: [{ at: Date.now(), what: 'Anonymous profile created on this device' }],
   anonId: Math.random().toString(36).slice(2, 6).toUpperCase(),
 })
-function load(): State { try { const s = localStorage.getItem(KEY); if (s) return { ...fresh(), ...JSON.parse(s) } } catch { /* storage blocked */ } return fresh() }
+const params = new URLSearchParams(location.search)
+/** ?demo=1 preloads a filled-in journey (for the demo video and screenshots); ?tab=, ?kind=, ?lang=ar, ?pod= adjust it. */
+function demoState(): State {
+  return {
+    ...fresh(), lang: (params.get('lang') as Lang) || 'en', onboarded: true, anonId: 'K7Q2',
+    answers: { pain: false, lump: false, ttc: '6to12', partner35: false, steroids: true, udt: false, pastTesticular: false, heatJob: true, smoke: false, metabolic: false, infection: false, erection: false, noSpermBefore: false },
+    checkDone: params.get('check') !== '0', paired: params.get('paired') !== '0', weekDone: params.get('week') !== '0', clipKind: (params.get('kind') as Kind) || 'both',
+    pod: (params.get('pod') as PodState) || 'collected', collectedAt: Date.now() - 754000, reviewedAt: params.get('reviewed') === '0' ? undefined : Date.now(),
+    audit: [
+      { at: Date.now() - 60000, what: 'One-time summary link created (expires in 24 h, opens once)' },
+      { at: Date.now() - 754000, what: 'Sample collected; Pod timer started' },
+      { at: Date.now() - 900000, what: 'Referral reviewed by clinician (simulated)' },
+      { at: Date.now() - 1800000, what: '7 days of Clip readings analysed on the phone' },
+      { at: Date.now() - 2400000, what: 'Check-in completed (answers kept on device)' },
+      { at: Date.now() - 2500000, what: 'Started anonymously (no name, no ID)' },
+    ],
+  }
+}
+function load(): State {
+  if (params.get('demo')) return demoState()
+  if (params.get('fresh')) return { ...fresh(), lang: (params.get('lang') as Lang) || 'en' }
+  try { const s = localStorage.getItem(KEY); if (s) return { ...fresh(), ...JSON.parse(s) } } catch { /* storage blocked */ }
+  return fresh()
+}
 
 const Ctx = createContext<{ s: State; set: (p: Partial<State>) => void; t: Strings; log: (w: string) => void; go: (t: Tab) => void; reset: () => void }>(null!)
 const useApp = () => useContext(Ctx)
@@ -56,7 +79,7 @@ const I = {
 /* ---------- shell ---------- */
 export default function MobileApp() {
   const [s, setS] = useState<State>(load)
-  const [tab, setTab] = useState<Tab>('home')
+  const [tab, setTab] = useState<Tab>(() => (params.get('tab') as Tab) || 'home')
   const [wide, setWide] = useState(() => window.innerWidth > 760)
   const [scale, setScale] = useState(() => Math.min(1, (window.innerHeight - 40) / 876))
   useEffect(() => { const f = () => { setWide(window.innerWidth > 760); setScale(Math.min(1, (window.innerHeight - 40) / 876)) }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
@@ -75,10 +98,10 @@ export default function MobileApp() {
   const app = (
     <Ctx.Provider value={api}>
       <div className="m-root" dir={s.lang === 'ar' ? 'rtl' : 'ltr'} lang={s.lang}>
-        <div className="m-status"><span>9:41</span><span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {!wide ? <div style={{ height: 'max(14px, env(safe-area-inset-top))', flex: 'none' }} /> : <div className="m-status"><span>9:41</span><span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5" width="3" height="7" rx="1" /><rect x="10" y="2" width="3" height="10" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4" /></svg>
           <svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="currentColor" opacity=".5" /><rect x="2" y="2" width="16" height="8" rx="2" fill="currentColor" /><rect x="23.5" y="4" width="2" height="4" rx="1" fill="currentColor" opacity=".5" /></svg>
-        </span></div>
+        </span></div>}
         <div className="m-scroll" ref={scrollRef}>
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div key={tab + s.lang} {...page}>
@@ -287,8 +310,8 @@ function Home() {
 function CheckIn() {
   const { s, set, t, log, go } = useApp()
   const visible = QUESTIONS.filter(q => q.id !== 'partner35' || (s.answers.ttc && s.answers.ttc !== 'none'))
-  const [i, setI] = useState(() => (s.checkDone ? visible.length : 0))
-  const [alarm, setAlarm] = useState<null | 'pain' | 'lump'>(null)
+  const [i, setI] = useState(() => (params.has('q') ? Number(params.get('q')) : s.checkDone ? visible.length : 0))
+  const [alarm, setAlarm] = useState<null | 'pain' | 'lump'>(() => (params.get('alarm') as 'pain' | 'lump') || null)
   const q = visible[i]
   const answer = (v: boolean | Ttc | undefined) => {
     set({ answers: { ...s.answers, [q.id]: v } })
@@ -522,6 +545,7 @@ function Pod() {
 function Vault() {
   const { s, t, log, reset } = useApp()
   const [link, setLink] = useState<{ url: string; qr: string; exp: number } | null>(null)
+  useEffect(() => { if (params.get('share')) make() }, [])
   const [confirm, setConfirm] = useState(false)
   const make = async () => {
     const tok = Array.from(crypto.getRandomValues(new Uint8Array(9)), b => b.toString(36).padStart(2, '0')).join('').slice(0, 14)
