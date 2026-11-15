@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Alzara · Men's Reproductive Health</title>
-<meta name="description" content="Alzara: a private, low-friction front door to men's reproductive health. Future Health Digital Innovation Challenge, Fertility Challenge 01. Prototype in progress.">
+<title>Alarzah · Men's Reproductive Health</title>
+<meta name="description" content="Alarzah: a private, low-friction front door to men's reproductive health. Future Health Digital Innovation Challenge, Fertility Challenge 01. Prototype in progress.">
 <style>
 :root{--bg:#f7f5f2;--card:#fff;--ink:#2b2522;--muted:#6b615c;--accent:#0f6e6e;--accent2:#e8f3f2;--warn:#b4441f;--warnbg:#fbece6;--ok:#2f7d32;--line:#e4ded8}
 @media (prefers-color-scheme:dark){:root{--bg:#161413;--card:#211e1c;--ink:#f1ece8;--muted:#b3a9a3;--accent:#5cc3c0;--accent2:#1f3332;--warn:#ff9a73;--warnbg:#3a2219;--ok:#7fd083;--line:#3a3431}}
@@ -36,7 +36,7 @@ a{color:var(--accent)}
 <body>
 <div class="wrap">
 <header>
-  <div><div class="brand">Al<span>zara</span></div><div class="tag">A cooler, quieter front door to men's reproductive health</div></div>
+  <div><div class="brand">Alar<span>zah</span></div><div class="tag">A cooler, quieter front door to men's reproductive health</div></div>
   <div class="row"><span class="pill">Guest mode · no login</span><span class="pill">Fertility · Challenge 01</span></div>
 </header>
 
@@ -76,7 +76,7 @@ a{color:var(--accent)}
 </div>
 
 <div class="card">
-  <h2>2 · Alzara Clip readings <span class="small">(simulated 7-day wear)</span></h2>
+  <h2>2 · Alarzah Clip readings <span class="small">(simulated 7-day wear)</span></h2>
   <p class="small">The Clip has two skin temperature sensors (left and right), an outside-temperature sensor and a motion sensor. No camera. Pick a simulated week to see what the phone computes.</p>
   <div class="row">
     <button class="ghost" data-trace="normal">Typical week</button>
@@ -106,7 +106,7 @@ a{color:var(--accent)}
 </div>
 
 <footer>
-  Alzara · Future Health Digital Innovation Challenge 2026 · Fertility Challenge 01: Male Reproductive Health ·
+  Alarzah · Future Health Digital Innovation Challenge 2026 · Fertility Challenge 01: Male Reproductive Health ·
   <a href="demo.html">Demo video</a> · Prototype preview, synthetic data only.
 </footer>
 </div>
@@ -159,7 +159,7 @@ $('go').onclick=()=>{
   if(pattern||v('udt')) out.push(['','Andrology / urology','A '+(pattern?'left/right temperature pattern that appears when upright and fades lying down':'history of undescended testicle')+' is worth a short clinical examination. This is not a diagnosis.']);
   if(v('aas')) out.push(['','Family physician (confidential)','Non-prescribed testosterone or steroids can stop sperm production. This is often reversible; a doctor can help you stop safely.']);
   if(v('metab')||v('mumps')) out.push(['','Family physician','Weight, diabetes and past testicular problems are worth a routine check.']);
-  if(ttc>=1||out.length) out.push(['','Semen analysis, collected at home','Use the Alzara Pod: collect at home, keep it between 20 and 37 °C, and deliver to the lab within the time limit, with an anonymous order code.']);
+  if(ttc>=1||out.length) out.push(['','Semen analysis, collected at home','Use the Alarzah Pod: collect at home, keep it between 20 and 37 °C, and deliver to the lab within the time limit, with an anonymous order code.']);
   const heat=sig.status==='ok'&&sig.heatHours>20;
   if(heat||v('heat')||v('smoke')) out.push(['','Self-care plan + re-test in 6 weeks',(heat?'Your heat load was high. ':'')+'Breaks from sitting, looser clothing, a ventilated seat, and stopping smoking or shisha can help.']);
   if(!out.length) out.push(['','No action needed now','Nothing in your answers needs a referral. You can re-check any time.']);
