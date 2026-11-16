@@ -1,6 +1,6 @@
 // Vercel function: Claude words the explanation; fixed rules decided everything; a checker gates every reply.
 import Anthropic from '@anthropic-ai/sdk'
-import { ExplainRequest, ExplainResponse, ruleText, SYSTEM_PROMPT, userPrompt, verify } from '../src/engine/verify'
+import { ExplainRequest, ExplainResponse, ruleText, SYSTEM_PROMPT, userPrompt, verify } from '../src/engine/verify.js'
 
 const MODEL = 'claude-opus-5-5'
 const json = (body: ExplainResponse | { error: string }, status = 200) =>
