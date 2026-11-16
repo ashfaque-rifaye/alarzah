@@ -47,3 +47,5 @@
   .c-list { position: static; max-height: 320px; }
   .c-main { padding: 16px; }
 }
+.c-live { display: inline-block; margin-left: 8px; padding: 1px 6px; border-radius: 6px; font: 700 9.5px var(--body); letter-spacing: .1em; color: #04070b; background: var(--mint); box-shadow: 0 0 12px rgba(124,245,184,.6); vertical-align: middle; }
+.c-flash { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 50; padding: 12px 18px; border-radius: 16px; background: rgba(12,22,28,.95); border: 1px solid rgba(124,245,184,.45); box-shadow: 0 20px 50px -20px rgba(0,0,0,.8); font-size: 14px; }

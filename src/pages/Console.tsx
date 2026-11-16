@@ -5,12 +5,23 @@ import { Heatmap, ThermalChart } from '../components/viz'
 import { analyse, Analysis, Trace } from '../engine/signals'
 import { Kind, rng, simulate } from '../engine/simulate'
 import { Checkin, EMPTY_CHECKIN, TIER_META, TIER_ORDER, triage, Triage } from '../engine/rules'
+import { postReview, readInbox, readReviews, SharedCase, subscribe } from '../engine/sync'
 import { runSignalBench, runTriageSuite } from '../engine/benchmark'
 import './console.css'
 
-interface Case { id: string; age: number; group: string; lang: 'Arabic' | 'English'; edu: string; submitted: number; checkin: Checkin; trace: Trace; analysis: Analysis; tri: Triage; completed: boolean; daysToEval: number }
+interface Case { live?: boolean; id: string; age: number | string; group: string; lang: 'Arabic' | 'English'; edu: string; submitted: number; checkin: Checkin; trace: Trace; analysis: Analysis; tri: Triage; completed: boolean; daysToEval: number }
 const GROUPS = ['Emirati', 'Arab expatriate', 'South Asian', 'Other']
 const EDU = ['School', 'Diploma', 'University']
+
+/** A case the man sent from his app (same browser in the prototype). */
+function fromShared(sc: SharedCase): Case {
+  const trace = simulate(sc.clipKind ?? 'poorWear', 11)
+  const analysis = analyse(trace)
+  return {
+    live: true, id: sc.code, age: '—', group: 'Not shared', lang: sc.lang === 'ar' ? 'Arabic' : 'English', edu: 'Not shared', submitted: sc.sentAt,
+    checkin: sc.checkin, trace, analysis, tri: triage(sc.checkin, sc.clipKind ? analysis : undefined, sc.lab), completed: true, daysToEval: 0,
+  }
+}
 
 function cohort(n = 28): Case[] {
   const r = rng(42)
@@ -32,9 +43,16 @@ type View = 'queue' | 'fairness' | 'benchmark'
 export default function Console() {
   const loc = useLocation(), nav = useNavigate()
   const view: View = loc.pathname.includes('benchmark') ? 'benchmark' : loc.pathname.includes('fairness') ? 'fairness' : 'queue'
-  const cases = useMemo(() => cohort(), [])
-  const [sel, setSel] = useState(cases[0].id)
-  const [signed, setSigned] = useState<Record<string, 'approved' | 'changed'>>({})
+  const base = useMemo(() => cohort(), [])
+  const [inbox, setInbox] = useState(readInbox)
+  const [flash, setFlash] = useState<string | null>(null)
+  useEffect(() => subscribe(() => {
+    const next = readInbox()
+    setInbox(prev => { if (next[0] && next[0].code !== prev[0]?.code) { setSel(next[0].code); setFlash(next[0].code); setTimeout(() => setFlash(null), 5000) } return next })
+  }), [])
+  const cases = useMemo(() => [...inbox.map(fromShared), ...base], [inbox, base])
+  const [sel, setSel] = useState(() => readInbox()[0]?.code ?? base[0].id)
+  const [signed, setSigned] = useState<Record<string, 'approved' | 'changed'>>(() => Object.fromEntries(readReviews().map(r => [r.code, r.decision])))
   useEffect(() => { document.title = 'Alarzah · Clinician console' }, [])
   return (
     <div className="c-shell grain">
@@ -48,6 +66,7 @@ export default function Console() {
         <Link to="/app" className="btn btn-ghost" style={{ fontSize: 13, padding: '10px 12px' }}>Open the man’s app →</Link>
       </aside>
       <main className="c-main">
+        <AnimatePresence>{flash && <motion.div className="c-flash" initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><span className="c-live">LIVE</span> New case {flash} just arrived from the man’s app</motion.div>}</AnimatePresence>
         <AnimatePresence mode="wait">
           <motion.div key={view} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             {view === 'queue' && <Queue cases={cases} sel={sel} setSel={setSel} signed={signed} setSigned={setSigned} />}
@@ -74,7 +93,7 @@ function Queue({ cases, sel, setSel, signed, setSigned }: { cases: Case[]; sel: 
           return (
             <motion.button layout key={x.id} className={`c-item ${x.id === sel ? 'on' : ''}`} onClick={() => setSel(x.id)}>
               <span className="c-dot" style={{ background: TIER_META[top.tier].color, boxShadow: `0 0 12px ${TIER_META[top.tier].color}` }} />
-              <div style={{ flex: 1, textAlign: 'left' }}><div className="mono" style={{ color: 'var(--ink)' }}>{x.id}</div><div className="dim" style={{ fontSize: 12 }}>{TIER_META[top.tier].label} · {x.lang}</div></div>
+              <div style={{ flex: 1, textAlign: 'left' }}><div className="mono" style={{ color: 'var(--ink)' }}>{x.id}{x.live && <span className="c-live">LIVE</span>}</div><div className="dim" style={{ fontSize: 12 }}>{TIER_META[top.tier].label} · {x.lang}</div></div>
               {signed[x.id] ? <span className="c-ok">✓</span> : <span className="dim" style={{ fontSize: 11 }}>{Math.round((Date.now() - x.submitted) / 3600e3)}h</span>}
             </motion.button>)
         })}
@@ -84,11 +103,11 @@ function Queue({ cases, sel, setSel, signed, setSigned }: { cases: Case[]; sel: 
           <div className="glass c-card">
             <div className="c-head">
               <div><div className="eyebrow">Shared by the man · one-time summary</div><h2 className="mono" style={{ fontSize: 28, marginTop: 6 }}>{c.id}</h2>
-                <div className="muted" style={{ fontSize: 13 }}>Age {c.age} · {c.group} · {c.lang} · {c.edu} · submitted {Math.round((Date.now() - c.submitted) / 3600e3)} h ago</div></div>
+                <div className="muted" style={{ fontSize: 13 }}>{c.live ? <>Sent from the man’s app just now · {c.lang} · age, nationality and education not shared</> : <>Age {c.age} · {c.group} · {c.lang} · {c.edu} · submitted {Math.round((Date.now() - c.submitted) / 3600e3)} h ago</>}</div></div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {signed[c.id] ? <span className="chip" style={{ color: 'var(--mint)' }}>✓ {signed[c.id] === 'approved' ? 'Referrals approved' : 'Changed and sent'}</span> : <>
-                  <button className="btn btn-primary" onClick={() => setSigned(o => ({ ...o, [c.id]: 'approved' }))}>Approve and send</button>
-                  <button className="btn btn-ghost" onClick={() => setSigned(o => ({ ...o, [c.id]: 'changed' }))}>Change</button></>}
+                  <button className="btn btn-primary" onClick={() => { setSigned(o => ({ ...o, [c.id]: 'approved' })); if (c.live) postReview({ code: c.id, decision: 'approved', note: 'Approved. Please book the steps shown; the home test can go ahead.', at: Date.now(), by: 'Dr. Demo' }) }}>Approve and send</button>
+                  <button className="btn btn-ghost" onClick={() => { setSigned(o => ({ ...o, [c.id]: 'changed' })); if (c.live) postReview({ code: c.id, decision: 'changed', note: 'Changed: please see your family physician first; they will arrange the rest.', at: Date.now(), by: 'Dr. Demo' }) }}>Change</button></>}
               </div>
             </div>
             <div className="c-recs">

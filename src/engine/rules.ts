@@ -43,9 +43,20 @@ export const TIER_META: Record<TierId, { label: string; color: string; short: st
   none: { label: 'Nothing needed now', short: 'All clear', color: '#9fb3bc' },
 }
 
+/** Semen analysis result (WHO 2021 lower reference limits: 5th centile of fertile men). */
+export interface SemenResult { volume: number; concentration: number; totalMotility: number; progressive: number; morphology: number }
+export const SEMEN_REF: { key: keyof SemenResult; label: string; unit: string; min: number }[] = [
+  { key: 'volume', label: 'Volume', unit: 'mL', min: 1.4 },
+  { key: 'concentration', label: 'Concentration', unit: 'million/mL', min: 16 },
+  { key: 'totalMotility', label: 'Total motility', unit: '%', min: 42 },
+  { key: 'progressive', label: 'Progressive motility', unit: '%', min: 30 },
+  { key: 'morphology', label: 'Normal forms', unit: '%', min: 4 },
+]
+export const semenBelow = (r: SemenResult) => SEMEN_REF.filter(x => r[x.key] < x.min)
+
 export interface Triage { recommendations: Recommendation[]; redFlag: boolean; clipNote?: string; firedRules: string[] }
 
-export function triage(c: Checkin, clip?: Analysis): Triage {
+export function triage(c: Checkin, clip?: Analysis, semen?: SemenResult): Triage {
   const out: Recommendation[] = []
   const add = (r: Recommendation) => { if (!out.some(o => o.tier === r.tier)) out.push(r) }
   const asym = clip?.status === 'ok' && clip.asymmetryPattern
@@ -58,9 +69,16 @@ export function triage(c: Checkin, clip?: Analysis): Triage {
     detail: 'A new lump needs a prompt examination and usually an ultrasound. Most lumps are not cancer, but it must be checked.',
     why: 'You reported a new lump in a testicle.' })
   const months = c.ttc === 'ge12' || (c.ttc === '6to12' && c.partner35)
+  if (semen && semen.concentration === 0) add({ tier: 'fertility', rule: 'R8', clinicianReview: true, title: 'Fertility service, with a specialist review',
+    detail: 'No sperm were seen in this sample. This needs a repeat test and a specialist review; there are often treatable causes.',
+    why: 'Semen analysis: concentration 0 million/mL (WHO 2021 lower reference 16).' })
   if (months || c.noSpermBefore) add({ tier: 'fertility', rule: 'R3', clinicianReview: true, title: 'Fertility service, together with your wife',
     detail: 'Both partners should be assessed in parallel, not one after the other.',
     why: c.noSpermBefore ? 'A previous test found no sperm.' : c.ttc === 'ge12' ? 'Trying for 12 months or more.' : 'Trying for 6+ months and your wife is 35 or older.' })
+  const low = semen && semen.concentration > 0 ? semenBelow(semen) : []
+  if (low.length) add({ tier: 'andrology', rule: 'R8', clinicianReview: true, title: 'An andrology review of your semen result',
+    detail: 'Some values were below the WHO reference range. One result is not a verdict: a repeat test and a short review usually come next.',
+    why: `Below WHO 2021 lower reference: ${low.map(x => `${x.label.toLowerCase()} ${semen![x.key]} ${x.unit} (ref ≥ ${x.min})`).join('; ')}.` })
   if (asym || c.udt) add({ tier: 'andrology', rule: 'R4', clinicianReview: true, title: 'A short andrology / urology examination',
     detail: asym ? 'Your Clip showed a left-warmer pattern when upright that fades lying down. A varicocele is one possible cause and is treatable. This is not a diagnosis.'
       : 'A history of undescended testicle is worth a specialist check before planning a family.',
@@ -71,7 +89,10 @@ export function triage(c: Checkin, clip?: Analysis): Triage {
       : 'A routine check of the risk factors you reported.',
     why: [c.steroids && 'non-prescribed steroids', c.metabolic && 'weight or diabetes', c.pastTesticular && 'past testicular problem', c.infection && 'infection symptoms', c.erection && 'erection or ejaculation problems'].filter(Boolean).join(', ') })
   const anyRisk = asym || heat || c.udt || c.steroids || c.metabolic || c.pastTesticular || c.heatJob || c.smoke || c.infection
-  if (c.ttc !== 'none' || (anyRisk && !c.pain)) add({ tier: 'semen', rule: 'R6', clinicianReview: true, title: 'A semen analysis, collected at home',
+  if (semen) add({ tier: 'semen', rule: 'R6', clinicianReview: true, title: low.length || semen.concentration === 0 ? 'Your semen analysis result' : 'Your semen analysis is within the reference range',
+    detail: low.length || semen.concentration === 0 ? 'See the values below and the review step above.' : 'All five values met the WHO 2021 reference limits. Keep the self-care steps; re-test if anything changes.',
+    why: `Volume ${semen.volume} mL · concentration ${semen.concentration} million/mL · total motility ${semen.totalMotility}% · progressive ${semen.progressive}% · normal forms ${semen.morphology}%.` })
+  else if (c.ttc !== 'none' || (anyRisk && !c.pain)) add({ tier: 'semen', rule: 'R6', clinicianReview: true, title: 'A semen analysis, collected at home',
     detail: 'Collect at home with the Alarzah Pod: it keeps the sample between 20 and 37 °C, times the delivery and uses an anonymous lab code.',
     why: c.ttc !== 'none' ? 'You are planning a family.' : 'At least one risk signal is present.' })
   if (heat || c.heatJob || c.smoke) add({ tier: 'selfCare', rule: 'R7', clinicianReview: false, title: 'Self-care plan, then re-test in 6 weeks',

@@ -7,7 +7,8 @@ import { Heatmap, TempGauge, ThermalChart, thermal } from '../components/viz'
 import { AskPanel, factsFrom, useVoice } from '../components/Ask'
 import { analyse } from '../engine/signals'
 import { Kind, KIND_LABEL, simulate } from '../engine/simulate'
-import { Checkin, EMPTY_CHECKIN, TIER_META, triage, Ttc } from '../engine/rules'
+import { Checkin, EMPTY_CHECKIN, SEMEN_REF, SemenResult, TIER_META, TierId, triage, Ttc } from '../engine/rules'
+import { readReviews, sendCase, subscribe } from '../engine/sync'
 import { Lang, QUESTIONS, STRINGS, Strings, TTC_OPTIONS } from '../i18n'
 import './mobile.css'
 
@@ -27,12 +28,17 @@ interface State {
   breach: boolean
   audit: Audit[]
   reviewedAt?: number
+  reviewNote?: string
+  sharedAt?: number
+  lab?: SemenResult & { at: number }
+  bookings: Booking[]
   anonId: string
 }
+interface Booking { tier: TierId; place: string; slot: string; ref: string; at: number }
 const KEY = 'alarzah.v1'
 const fresh = (): State => ({
   lang: 'en', onboarded: false, answers: {}, checkDone: false, paired: false, clipKind: 'asymmetry', weekDone: false,
-  pod: 'none', breach: false, audit: [{ at: Date.now(), what: 'Anonymous profile created on this device' }],
+  pod: 'none', breach: false, bookings: [], audit: [{ at: Date.now(), what: 'Anonymous profile created on this device' }],
   anonId: Math.random().toString(36).slice(2, 6).toUpperCase(),
 })
 const params = new URLSearchParams(location.search)
@@ -43,6 +49,9 @@ function demoState(): State {
     answers: { pain: false, lump: false, ttc: '6to12', partner35: false, steroids: true, udt: false, pastTesticular: false, heatJob: true, smoke: false, metabolic: false, infection: false, erection: false, noSpermBefore: false },
     checkDone: params.get('check') !== '0', paired: params.get('paired') !== '0', weekDone: params.get('week') !== '0', clipKind: (params.get('kind') as Kind) || 'both',
     pod: (params.get('pod') as PodState) || 'collected', collectedAt: Date.now() - 754000, reviewedAt: params.get('reviewed') === '0' ? undefined : Date.now(),
+    sharedAt: params.get('reviewed') === '0' ? undefined : Date.now() - 900000, reviewNote: 'Approved. Please book the examination and the home test.',
+    lab: params.get('lab') ? { ...labFor((params.get('kind') as Kind) || 'both'), at: Date.now() - 3600e3 } : undefined,
+    bookings: params.get('book') ? [{ tier: 'andrology', place: PLACES.andrology!, slot: slots()[1], ref: 'BK-4Q7M', at: Date.now() - 600e3 }] : [],
     audit: [
       { at: Date.now() - 60000, what: 'One-time summary link created (expires in 24 h, opens once)' },
       { at: Date.now() - 754000, what: 'Sample collected; Pod timer started' },
@@ -60,7 +69,24 @@ function load(): State {
   return fresh()
 }
 
-const Ctx = createContext<{ s: State; set: (p: Partial<State>) => void; t: Strings; log: (w: string) => void; go: (t: Tab) => void; reset: () => void }>(null!)
+/** Simulated lab result for the demo: heat exposure lowers it, otherwise within range. */
+function labFor(kind: Kind): SemenResult {
+  return kind === 'heat' || kind === 'both'
+    ? { volume: 2.6, concentration: 11, totalMotility: 36, progressive: 24, morphology: 5 }
+    : { volume: 2.9, concentration: 38, totalMotility: 57, progressive: 41, morphology: 6 }
+}
+const PLACES: Partial<Record<TierId, string>> = {
+  urgentUrology: 'Urology clinic · urgent slot', andrology: 'Andrology clinic · partner network', fertility: 'Fertility centre · partner network', familyPhysician: 'Your family physician (Sahatna)',
+}
+function slots() {
+  const out: string[] = []; const d = new Date(); let add = 1
+  while (out.length < 3) { const x = new Date(d.getTime() + add * 864e5); add++; if (x.getDay() === 5 || x.getDay() === 6) continue
+    out.push(`${x.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${['09:30', '13:15', '17:40'][out.length]}`) }
+  return out
+}
+const caseCode = (s: State) => `ALZ-${s.anonId}`
+
+const Ctx = createContext<{ s: State; set: (p: Partial<State>) => void; t: Strings; log: (w: string) => void; go: (t: Tab) => void; reset: () => void; notify: (m: string) => void }>(null!)
 const useApp = () => useContext(Ctx)
 
 const spring = { type: 'spring', stiffness: 380, damping: 32 } as const
@@ -86,6 +112,27 @@ export default function MobileApp() {
   useEffect(() => { const f = () => { setWide(window.innerWidth > 760 && !params.has('embed')); setScale(Math.min(1, (window.innerHeight - 40) / 876)) }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* ignore */ } }, [s])
   useEffect(() => { document.title = 'Alarzah · App' }, [])
+  const [toast, setToast] = useState<string | null>(null)
+  const notify = (m: string) => { setToast(m); setTimeout(() => setToast(t => (t === m ? null : t)), 4200) }
+  useEffect(() => {
+    const check = () => {
+      const r = readReviews().find(x => x.code === caseCode(s))
+      if (r && (!s.reviewedAt || r.at > s.reviewedAt)) {
+        setS(o => ({ ...o, reviewedAt: r.at, reviewNote: r.note, audit: [{ at: Date.now(), what: `Clinician ${r.by} ${r.decision} your referral` }, ...o.audit] }))
+        notify(`${r.by} reviewed your referral`)
+      }
+    }
+    check()
+    return subscribe(check)
+  }, [s.anonId, s.reviewedAt])
+  useEffect(() => {
+    if (s.pod !== 'delivered' || s.lab) return
+    const id = setTimeout(() => {
+      setS(o => ({ ...o, lab: { ...labFor(o.clipKind), at: Date.now() }, audit: [{ at: Date.now(), what: 'Lab result received with the anonymous code (simulated)' }, ...o.audit] }))
+      notify('Your semen analysis result is ready')
+    }, 7000)
+    return () => clearTimeout(id)
+  }, [s.pod, s.lab])
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }) }, [tab])
   const api = useMemo(() => ({
@@ -94,6 +141,7 @@ export default function MobileApp() {
     log: (what: string) => setS(o => ({ ...o, audit: [{ at: Date.now(), what }, ...o.audit].slice(0, 40) })),
     go: (t: Tab) => setTab(t),
     reset: () => { try { localStorage.removeItem(KEY) } catch { /* ignore */ } setS(fresh()); setTab('home') },
+    notify,
   }), [s])
 
   const app = (
@@ -122,6 +170,7 @@ export default function MobileApp() {
             </button>
           ))}
         </nav>
+        <AnimatePresence>{toast && <motion.div className="m-toast" role="status" initial={{ opacity: 0, y: -20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12 }}><span className="m-toast-dot" />{toast}</motion.div>}</AnimatePresence>
         <AnimatePresence>{!s.onboarded && <Onboarding />}</AnimatePresence>
       </div>
     </Ctx.Provider>
@@ -299,9 +348,13 @@ function Home() {
           </div>
         </motion.div>
       )}
+      {s.bookings.length > 0 && <div className="glass m-card" style={{ marginTop: 6 }}>
+        <div className="eyebrow" style={{ color: 'var(--mint)' }}>Upcoming</div>
+        {s.bookings.map(b => <div key={b.ref} className="m-between" style={{ marginTop: 10, fontSize: 13.5 }}><div><b>{TIER_META[b.tier].label}</b><div className="muted" style={{ fontSize: 12 }}>{b.place}</div></div><span className="mono" style={{ fontSize: 12 }}>{b.slot}</span></div>)}
+      </div>}
       <div className="glass m-card" style={{ marginTop: 6 }}>
-        <div className="m-between"><div><div style={{ fontWeight: 600 }}>Alarzah Pod</div><div className="muted" style={{ fontSize: 12.5 }}>Semen test at home, lab-grade result</div></div>
-          <button className="btn btn-ghost" style={{ padding: '9px 14px', fontSize: 13 }} onClick={() => go('care')}>{s.pod === 'none' ? t.orderPod : s.pod}</button></div>
+        <div className="m-between"><div><div style={{ fontWeight: 600 }}>Alarzah Pod</div><div className="muted" style={{ fontSize: 12.5 }}>{s.lab ? 'Lab result ready' : s.pod === 'delivered' ? 'At the lab, result on the way' : 'Semen test at home, lab-grade result'}</div></div>
+          <button className="btn btn-ghost" style={{ padding: '9px 14px', fontSize: 13 }} onClick={() => go('care')}>{s.lab ? 'View result' : s.pod === 'none' ? t.orderPod : s.pod === 'ordered' ? 'Collect' : s.pod === 'collected' ? 'In transit' : 'At lab'}</button></div>
       </div>
     </>
   )
@@ -384,14 +437,14 @@ function ClipScreen() {
   const [ff, setFf] = useState(0)
   const { trace, analysis } = useClip()
   const live = useLive(s.clipKind)
-  const pair = async () => {
+  const nav = navigator as Navigator & { bluetooth?: { requestDevice: (o: unknown) => Promise<unknown> } }
+  const pair = async (real: boolean) => {
     setScan(true)
-    const nav = navigator as Navigator & { bluetooth?: { requestDevice: (o: unknown) => Promise<unknown> } }
-    if (nav.bluetooth && window.confirm('Look for a real Alarzah Clip over Bluetooth? (Cancel uses the demo Clip.)')) {
-      try { await nav.bluetooth.requestDevice({ filters: [{ namePrefix: 'Alarzah' }], optionalServices: ['health_thermometer'] }); log('Real Clip paired over Bluetooth') }
-      catch { log('No real Clip found; demo Clip used') }
+    if (real && nav.bluetooth) {
+      try { await nav.bluetooth.requestDevice({ filters: [{ namePrefix: 'Alarzah' }], optionalServices: ['health_thermometer'] }); log('Real Clip found over Bluetooth') }
+      catch { log('No real Clip found nearby; demo Clip used instead') }
     }
-    setTimeout(() => { setScan(false); set({ paired: true }); log('Demo Clip paired (simulated readings)') }, 1800)
+    setTimeout(() => { setScan(false); set({ paired: true }); log('Demo Clip paired (simulated readings)') }, 1600)
   }
   const fastForward = () => {
     setFf(1)
@@ -402,7 +455,8 @@ function ClipScreen() {
       <Header title={t.pairClip} sub="Clip it into ordinary underwear. Two soft pads rest left and right. No camera, no microphone, no images." />
       <div className="glass m-card" style={{ textAlign: 'center', padding: 26 }}>
         <div className="radar">{scan && <><span /><span /><span /></>}<ClipArt /></div>
-        <button className="btn btn-primary" style={{ width: '100%' }} onClick={pair} disabled={scan}>{scan ? 'Searching…' : t.pairClip}</button>
+        <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => pair(false)} disabled={scan}>{scan ? 'Pairing…' : 'Use the demo Clip'}</button>
+        {nav.bluetooth && !scan && <button className="btn btn-ghost" style={{ width: '100%', marginTop: 8 }} onClick={() => pair(true)}>Find a real Clip (Bluetooth)</button>}
         <p className="dim" style={{ fontSize: 12, margin: '12px 0 0' }}>Uses Web Bluetooth if a real Clip is nearby; otherwise a demo Clip with simulated readings.</p>
       </div>
     </>
@@ -474,38 +528,112 @@ function useLive(kind: Kind) {
 }
 
 /* ---------- care ---------- */
+const BOOKABLE: TierId[] = ['urgentUrology', 'fertility', 'andrology', 'familyPhysician']
 function Care() {
-  const { s, set, t, log, go } = useApp()
+  const { s, set, t, log, go, notify } = useApp()
   const { analysis } = useClip()
-  const tri = triage(toCheckin(s.answers), analysis)
+  const tri = triage(toCheckin(s.answers), analysis, s.lab)
   const [open, setOpen] = useState<string | null>(null)
-  useEffect(() => {
-    if (s.checkDone && !s.reviewedAt) { const id = setTimeout(() => { set({ reviewedAt: Date.now() }); log('Referral reviewed by clinician (simulated)') }, 6000); return () => clearTimeout(id) }
-  }, [s.checkDone, s.reviewedAt])
+  const [booking, setBooking] = useState<TierId | null>(null)
   if (!s.checkDone) return (<><Header title={t.care} /><div className="glass m-card"><p style={{ marginTop: 0 }}>Finish the private check-in first.</p><button className="btn btn-primary" onClick={() => go('check')}>{t.startCheck}</button></div></>)
+  const send = () => {
+    sendCase({ code: caseCode(s), sentAt: Date.now(), lang: s.lang, checkin: toCheckin(s.answers), clipKind: s.paired && s.weekDone ? s.clipKind : undefined, lab: s.lab ? { volume: s.lab.volume, concentration: s.lab.concentration, totalMotility: s.lab.totalMotility, progressive: s.lab.progressive, morphology: s.lab.morphology } : undefined })
+    set({ sharedAt: Date.now(), reviewedAt: undefined })
+    log(`Summary sent to the clinician queue as ${caseCode(s)} (with consent)`)
+    notify('Sent to the clinician queue')
+  }
+  const status = s.reviewedAt ? 'reviewed' : s.sharedAt ? 'waiting' : 'unsent'
   return (
     <>
       <Header title={t.nextStep} sub={tri.clipNote} />
+      <div className={`send-card ${status}`}>
+        {status === 'unsent' && <>
+          <div style={{ fontWeight: 600 }}>Ready for a clinician to check</div>
+          <div className="muted" style={{ fontSize: 13, margin: '4px 0 10px' }}>Sends your answers, Clip signals and results under the code <b className="mono">{caseCode(s)}</b>. No name, no ID. It is written to your audit log.</div>
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={send}>Send for clinician review</button>
+        </>}
+        {status === 'waiting' && <>
+          <div className="m-row"><span className="pulse-dot" /><b>Waiting for a clinician</b></div>
+          <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Case {caseCode(s)} is in the review queue. Open the clinician console (/clinic) in this browser to review it live.</div>
+          <button className="dim" style={{ fontSize: 12, marginTop: 8 }} onClick={() => { set({ reviewedAt: Date.now(), reviewNote: 'Approved (simulated review).' }); log('Referral reviewed (simulated, single-screen demo)') }}>Simulate the review (single-screen demo)</button>
+        </>}
+        {status === 'reviewed' && <>
+          <div className="m-row"><span style={{ color: 'var(--mint)', fontSize: 18 }}>✓</span><b>Reviewed by a clinician</b></div>
+          {s.reviewNote && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>“{s.reviewNote}”</div>}
+          <div className="dim" style={{ fontSize: 11.5, marginTop: 4 }}>You can now book the steps below.</div>
+        </>}
+      </div>
       <div style={{ marginBottom: 12 }}><AskPanel facts={factsFrom(tri, analysis)} lang={s.lang} compact /></div>
       {tri.recommendations.map((r, k) => {
         const m = TIER_META[r.tier]
+        const booked = s.bookings.find(b => b.tier === r.tier)
         return (
-          <motion.div key={r.tier} className="tier" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: k * 0.07 }}>
+          <motion.div key={r.tier + r.rule} className="tier" initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: k * 0.07 }}>
             <div className="tier-bar" style={{ background: m.color, boxShadow: `0 0 18px ${m.color}` }} />
             <div className="m-between"><span className="tier-tag" style={{ color: m.color }}>{m.label}</span><span className="dim mono">{r.rule}</span></div>
             <div style={{ fontWeight: 600, fontSize: 17, margin: '6px 0 4px' }}>{r.title}</div>
             <div className="muted" style={{ fontSize: 13.5 }}>{r.detail}</div>
+            {r.tier === 'emergency' && <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+              <a className="btn" style={{ background: '#ff4d3d', color: '#fff' }} href="tel:998">Call 998 (UAE ambulance)</a>
+              <a className="btn btn-ghost" href="https://www.google.com/maps/search/emergency+department+near+me" target="_blank" rel="noreferrer">Nearest emergency department</a>
+            </div>}
             <div className="m-between">
-              {r.clinicianReview ? <span className={`review ${s.reviewedAt ? 'ok' : ''}`}><i />{s.reviewedAt ? `${t.reviewed} · simulated` : t.clinicianReview}</span> : <span className="review ok"><i />Shown instantly · no review delay</span>}
+              {r.clinicianReview ? <span className={`review ${s.reviewedAt ? 'ok' : ''}`}><i />{s.reviewedAt ? t.reviewed : s.sharedAt ? 'Waiting for review' : 'Not yet sent for review'}</span> : <span className="review ok"><i />Shown instantly · no review delay</span>}
               <button className="muted" style={{ fontSize: 12.5, marginTop: 10 }} onClick={() => setOpen(open === r.tier ? null : r.tier)}>{t.why}</button>
             </div>
             <AnimatePresence>{open === r.tier && <motion.div className="why" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}>{r.why}<div className="mono dim" style={{ marginTop: 6 }}>{t.rule} {r.rule} · deterministic · no AI</div></motion.div>}</AnimatePresence>
-            {r.tier === 'semen' && <Pod />}
+            {BOOKABLE.includes(r.tier) && (booked
+              ? <div className="booked">✓ Booked · {booked.slot}<br /><span className="dim">{booked.place} · ref {booked.ref}</span></div>
+              : <button className="btn btn-ghost" style={{ width: '100%', marginTop: 12 }} disabled={!s.reviewedAt} onClick={() => setBooking(r.tier)}>{s.reviewedAt ? `${t.book} · ${PLACES[r.tier]}` : 'Booking opens after review'}</button>)}
+            {r.tier === 'semen' && (s.lab ? <LabCard /> : <Pod />)}
           </motion.div>
         )
       })}
       <p className="dim" style={{ fontSize: 12 }}>{t.notDiagnosis}</p>
+      <AnimatePresence>{booking && <BookSheet tier={booking} onClose={() => setBooking(null)} />}</AnimatePresence>
     </>
+  )
+}
+function BookSheet({ tier, onClose }: { tier: TierId; onClose: () => void }) {
+  const { s, set, log, notify } = useApp()
+  const [pick, setPick] = useState(0)
+  const opts = slots()
+  const confirm = () => {
+    const ref = 'BK-' + Math.random().toString(36).slice(2, 6).toUpperCase()
+    set({ bookings: [...s.bookings.filter(b => b.tier !== tier), { tier, place: PLACES[tier]!, slot: opts[pick], ref, at: Date.now() }] })
+    log(`Booked ${TIER_META[tier].label} · ${opts[pick]} (anonymous referral ${ref})`)
+    notify('Appointment booked'); onClose()
+  }
+  return (
+    <motion.div className="sheet-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div className="sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 32 }} onClick={e => e.stopPropagation()}>
+        <div className="sheet-grip" />
+        <div className="tier-tag" style={{ color: TIER_META[tier].color }}>{TIER_META[tier].label}</div>
+        <h3 style={{ fontSize: 22, margin: '6px 0 4px' }}>{PLACES[tier]}</h3>
+        <p className="muted" style={{ fontSize: 13, marginTop: 0 }}>The clinic receives the anonymous referral {caseCode(s)}; your name is given only at the visit, if you choose.</p>
+        {opts.map((o, i) => <button key={o} className={`q-opt ${pick === i ? 'sel' : ''}`} onClick={() => setPick(i)}>{o}<span>{pick === i ? '●' : '○'}</span></button>)}
+        <button className="btn btn-primary" style={{ width: '100%', marginTop: 14 }} onClick={confirm}>Confirm booking</button>
+        <p className="dim" style={{ fontSize: 11, textAlign: 'center' }}>Prototype: bookings are simulated.</p>
+      </motion.div>
+    </motion.div>
+  )
+}
+function LabCard() {
+  const { s } = useApp()
+  const lab = s.lab!
+  return (
+    <div className="lab">
+      <div className="m-between"><b>Semen analysis · lab result</b><span className="dim" style={{ fontSize: 11 }}>{new Date(lab.at).toLocaleDateString()} · simulated</span></div>
+      {SEMEN_REF.map(x => {
+        const v = lab[x.key], below = v < x.min, max = x.min * 3
+        return (
+          <div key={x.key} style={{ marginTop: 10 }}>
+            <div className="m-between" style={{ fontSize: 12.5 }}><span>{x.label}</span><span style={{ color: below ? 'var(--warm)' : 'var(--mint)' }}>{v} {x.unit} {below ? '· below' : '· ok'}</span></div>
+            <div className="lab-bar"><i style={{ left: `${(x.min / max) * 100}%` }} /><motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(100, (v / max) * 100)}%` }} transition={{ duration: 0.8 }} style={{ background: below ? 'linear-gradient(90deg,#ffc15e,#ff6a3d)' : undefined }} /></div>
+          </div>)
+      })}
+      <div className="dim" style={{ fontSize: 11, marginTop: 8 }}>Marker = WHO 2021 lower reference limit. One result is not a diagnosis.</div>
+    </div>
   )
 }
 function Pod() {
@@ -522,7 +650,7 @@ function Pod() {
     <div className="why" style={{ color: 'var(--ink)' }}>Pod arriving tomorrow (simulated). Collect at home, then press the button on the Pod.
       <button className="btn btn-primary" style={{ width: '100%', marginTop: 10 }} onClick={() => { set({ pod: 'collected', collectedAt: Date.now(), breach: false }); log('Sample collected; Pod timer started') }}>I’ve collected the sample</button></div>
   )
-  if (s.pod === 'delivered') return <div className="why" style={{ color: 'var(--mint)' }}>Delivered to the lab in time and within 20–37 °C. Result will appear here (simulated).</div>
+  if (s.pod === 'delivered') return <div className="why" style={{ color: 'var(--mint)' }}>Delivered to the lab in time and within 20–37 °C. The result arrives here with your anonymous code (simulated: in a few seconds).</div>
   const mm = Math.floor(left / 60000), ss = Math.floor((left % 60000) / 1000)
   const r = 92, c = 2 * Math.PI * r
   const bad = s.breach || left === 0

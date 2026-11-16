@@ -27,7 +27,9 @@ const BANNED: [RegExp, string][] = [
   [/\b(?:should|must) (?:not )?(?:marry|divorce|get married|have (?:a )?(?:baby|children)|stop trying)\b/i, 'gives life or marriage advice'],
   [/\b(?:take|start|stop) (?:\d+ ?mg|clomiphene|testosterone|hcg|antibiotics)\b/i, 'gives medication instructions'],
   [/\bignore (?:the|your) (?:doctor|clinician|referral)\b/i, 'undermines the referral'],
+  [/(?:(?:is|it's|this is) not (?:serious|dangerous|a (?:big )?(?:deal|problem))|nothing to worry about|no need to worry|you(?:'re| are) (?:fine|healthy|normal))/i, 'gives false reassurance'],
   [/(?:أنت مصاب|لديك دوالي|أنت عقيم|نضمن|بالتأكيد|يجب أن تتزوج|يجب أن تطلق)/, 'states a diagnosis or gives life advice (Arabic)'],
+  [/(?:ليس خطير|غير خطير|لا داعي للقلق|لا تقلق|أنت بخير|أنت سليم)/, 'gives false reassurance (Arabic)'],
 ]
 
 export function verify(text: string, facts: ExplainFacts): Check[] {
@@ -62,6 +64,8 @@ Rules for every reply:
 - Use only the facts provided. Never add a number, percentage, statistic or timeframe that is not in the facts.
 - Never diagnose, never say what he "has", never promise an outcome, never change or reorder the next steps.
 - Never give medication instructions or advice about marriage, divorce or family decisions; for those, say a clinician can talk it through.
+- Never judge how serious something is ("not serious", "nothing to worry about", "you are fine"); say the clinician will look at it with him.
+- Do not mention marriage, wives or family unless the facts or his question do.
 - If the first step is an emergency, say first and clearly that he should go to an emergency department now.
 - Keep it short: at most 110 words, no headings, no lists unless asked. Avoid stigma; do not assume he is married or trying for a baby unless the facts say so.
 - Answer in the requested language (English or Gulf-friendly Modern Standard Arabic) at the requested reading level.

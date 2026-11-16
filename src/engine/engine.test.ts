@@ -38,9 +38,30 @@ describe('AI reply checker', () => {
   it('passes a faithful reply', () => expect(verify('Your left side was 0.74 °C warmer when upright. A short examination is the next step. This is screening support, not a diagnosis.', facts).every(c => c.pass)).toBe(true))
   it('blocks an invented statistic', () => expect(verify('About 40% of men like you have a varicocele.', facts)[0].pass).toBe(false))
   it('blocks a diagnosis', () => expect(verify('You have a varicocele and should get surgery.', facts)[1].pass).toBe(false))
+  it('blocks false reassurance (EN + AR)', () => {
+    expect(verify('Do not worry, this is not serious.', facts)[1].pass).toBe(false)
+    expect(verify('لا، هذا ليس خطيراً.', facts)[1].pass).toBe(false)
+  })
   it('blocks marriage advice', () => expect(verify('You should not marry until this is fixed.', facts)[1].pass).toBe(false))
   it('keeps emergency first', () => {
     const f = { recommendations: [{ tier: 'emergency', label: 'Emergency now', title: 'Go to an emergency department now', rule: 'R1', why: 'pain' }] }
     expect(verify('Please see your family doctor soon. This is screening support.', f).find(c => c.name.startsWith('Emergency'))!.pass).toBe(false)
   })
+})
+
+import { semenBelow } from './rules'
+describe('semen result rule (R8)', () => {
+  const ok = { volume: 2.8, concentration: 42, totalMotility: 58, progressive: 44, morphology: 6 }
+  it('normal result adds no review', () => {
+    const t = triage({ ...EMPTY_CHECKIN, ttc: 'lt6' }, undefined, ok)
+    expect(t.recommendations.some(r => r.rule === 'R8')).toBe(false)
+    expect(t.recommendations.find(r => r.tier === 'semen')!.title).toMatch(/within/)
+  })
+  it('low concentration routes to andrology', () => {
+    const low = { ...ok, concentration: 11, totalMotility: 36 }
+    expect(semenBelow(low).map(x => x.key)).toEqual(['concentration', 'totalMotility'])
+    expect(triage(EMPTY_CHECKIN, undefined, low).recommendations.some(r => r.tier === 'andrology' && r.rule === 'R8')).toBe(true)
+  })
+  it('no sperm routes to the fertility service', () =>
+    expect(triage(EMPTY_CHECKIN, undefined, { ...ok, concentration: 0 }).recommendations[0].tier).toBe('fertility'))
 })

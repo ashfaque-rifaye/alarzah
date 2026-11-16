@@ -2,3 +2,4 @@ node_modules
 dist
 .vercel
 .vercel
+e2e/out

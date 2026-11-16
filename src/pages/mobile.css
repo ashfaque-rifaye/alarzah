@@ -87,3 +87,20 @@
 .dots i { height: 6px; width: 6px; border-radius: 6px; background: rgba(255,255,255,.2); transition: width .3s; }
 .dots i.on { width: 26px; background: var(--cool); }
 @media (max-width: 1100px) { .m-desktop { grid-template-columns: auto; justify-content: center; } .m-side { display: none; } }
+/* v3: review, booking, lab, toast */
+.send-card { padding: 16px; border-radius: 22px; margin-bottom: 12px; border: 1px solid rgba(59,232,224,.35); background: linear-gradient(160deg, rgba(59,232,224,.12), rgba(255,255,255,.02)); }
+.send-card.waiting { border-color: rgba(255,193,94,.45); background: linear-gradient(160deg, rgba(255,193,94,.12), rgba(255,255,255,.02)); }
+.send-card.reviewed { border-color: rgba(124,245,184,.45); background: linear-gradient(160deg, rgba(124,245,184,.12), rgba(255,255,255,.02)); }
+.pulse-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warm); box-shadow: 0 0 12px var(--warm); animation: pulse 1.4s infinite; }
+.booked { margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: rgba(124,245,184,.08); border: 1px solid rgba(124,245,184,.35); color: var(--mint); font-size: 13.5px; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.lab { margin-top: 12px; padding: 14px; border-radius: 18px; background: rgba(0,0,0,.28); border: 1px solid var(--line); }
+.lab-bar { position: relative; height: 8px; border-radius: 6px; background: rgba(255,255,255,.07); margin-top: 6px; }
+.lab-bar > div { height: 100%; border-radius: 6px; background: var(--thermal); }
+.lab-bar > i { position: absolute; top: -4px; width: 2px; height: 16px; background: var(--ink); opacity: .8; }
+.sheet-bg { position: absolute; inset: 0; z-index: 90; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; }
+.sheet { width: 100%; padding: 12px 20px 34px; border-radius: 28px 28px 0 0; background: #0b141a; border-top: 1px solid var(--line2); }
+.sheet-grip { width: 44px; height: 5px; border-radius: 4px; background: rgba(255,255,255,.2); margin: 0 auto 14px; }
+.m-toast { position: absolute; left: 16px; right: 16px; top: 58px; z-index: 95; display: flex; gap: 10px; align-items: center; padding: 13px 16px; border-radius: 18px; background: rgba(14,24,30,.92); border: 1px solid rgba(124,245,184,.4); backdrop-filter: blur(18px); font-size: 14px; box-shadow: 0 20px 40px -12px rgba(0,0,0,.7); }
+.m-full .m-toast { top: max(14px, env(safe-area-inset-top)); }
+.m-toast-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); flex: none; }
