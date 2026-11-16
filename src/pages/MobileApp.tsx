@@ -81,7 +81,7 @@ const PLACES: Partial<Record<TierId, string>> = {
 }
 function slots() {
   const out: string[] = []; const d = new Date(); let add = 1
-  while (out.length < 3) { const x = new Date(d.getTime() + add * 864e5); add++; if (x.getDay() === 5 || x.getDay() === 6) continue
+  while (out.length < 3) { const x = new Date(d.getTime() + add * 864e5); add++; if (x.getDay() === 6 || x.getDay() === 0) continue // UAE weekend: Saturday and Sunday
     out.push(`${x.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} · ${['09:30', '13:15', '17:40'][out.length]}`) }
   return out
 }
