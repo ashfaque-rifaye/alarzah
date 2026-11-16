@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
+import { useVisible } from './useVisible'
 import * as THREE from 'three'
 
 /**
@@ -75,9 +76,13 @@ function Plane({ intensity }: { intensity: number }) {
 }
 
 export default function ThermalField({ intensity = 1 }: { intensity?: number }) {
+  const box = useRef<HTMLDivElement>(null)
+  const visible = useVisible(box, '0px')
   return (
-    <Canvas dpr={[1, 1.25]} gl={{ antialias: false, powerPreference: 'high-performance' }} style={{ position: 'absolute', inset: 0 }} eventSource={typeof document !== 'undefined' ? document.body : undefined} eventPrefix="client">
+    <div ref={box} style={{ position: 'absolute', inset: 0 }}>
+    <Canvas frameloop={visible ? 'always' : 'never'} dpr={[1, 1.25]} gl={{ antialias: false, powerPreference: 'high-performance' }} style={{ position: 'absolute', inset: 0 }} eventSource={typeof document !== 'undefined' ? document.body : undefined} eventPrefix="client">
       <Plane intensity={intensity} />
     </Canvas>
+    </div>
   )
 }

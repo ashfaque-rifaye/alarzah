@@ -2,6 +2,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { ContactShadows, Environment, Float, Html, Lightformer, RoundedBox } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { MutableRefObject, useMemo, useRef } from 'react'
+import { useVisible } from './useVisible'
 import * as THREE from 'three'
 
 const C = { cool: '#3be8e0', mint: '#7cf5b8', warm: '#ffc15e', ember: '#ff6a3d' }
@@ -98,9 +99,11 @@ export function Studio() {
 }
 
 export default function ClipScene({ height = 520, progress, labels = false, bloom = false }: { height?: number | string; progress?: MutableRefObject<number>; labels?: boolean; bloom?: boolean }) {
+  const box = useRef<HTMLDivElement>(null)
+  const visible = useVisible(box)
   return (
-    <div style={{ height, width: '100%' }}>
-      <Canvas camera={{ position: [labels ? 0.6 : 0, 0, labels ? 8.4 : 5.2], fov: 38 }} dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }} style={{ overflow: 'visible' }}>
+    <div ref={box} style={{ height, width: '100%' }}>
+      <Canvas frameloop={visible ? 'always' : 'never'} camera={{ position: [labels ? 0.6 : 0, 0, labels ? 8.4 : 5.2], fov: 38 }} dpr={[1, 1.75]} gl={{ antialias: true, alpha: true }} style={{ overflow: 'visible' }}>
         <Studio />
         <Float speed={1.4} rotationIntensity={0.15} floatIntensity={0.5}><group position={[0, labels ? -0.1 : 0.3, 0]}><Clip progress={progress} labels={labels} /></group></Float>
         <ContactShadows position={[0, -2.3, 0]} opacity={0.45} scale={9} blur={2.8} far={4} color="#000" />
