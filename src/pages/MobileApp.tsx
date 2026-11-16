@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import QRCode from 'qrcode'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import BreezeField from '../components/BreezeField'
 import { Heatmap, TempGauge, ThermalChart, thermal } from '../components/viz'
@@ -590,7 +591,7 @@ function Care() {
         )
       })}
       <p className="dim" style={{ fontSize: 12 }}>{t.notDiagnosis}</p>
-      <AnimatePresence>{booking && <BookSheet tier={booking} onClose={() => setBooking(null)} />}</AnimatePresence>
+      {createPortal(<AnimatePresence>{booking && <BookSheet tier={booking} onClose={() => setBooking(null)} />}</AnimatePresence>, document.querySelector('.m-root') ?? document.body)}
     </>
   )
 }
