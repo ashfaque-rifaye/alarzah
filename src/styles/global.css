@@ -74,3 +74,34 @@ h1, h2, h3, h4 { font-family: var(--display); letter-spacing: -0.02em; margin: 0
 .scroll-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 .scroll-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 6px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+/* ---------- Ask Alarzah ---------- */
+.ask { border-radius: 24px; padding: 16px; background: radial-gradient(120% 120% at 0% 0%, rgba(157,139,255,.16), transparent 50%), radial-gradient(120% 120% at 100% 0%, rgba(59,232,224,.12), transparent 55%), rgba(255,255,255,.035); border: 1px solid rgba(157,139,255,.3); }
+.ask-head { display: flex; gap: 12px; align-items: center; }
+.ask-sub { font-size: 11.5px; color: var(--muted); }
+.ask-orb { width: 38px; height: 38px; border-radius: 50%; flex: none; background: conic-gradient(from 0deg, #9d8bff, #3be8e0, #7cf5b8, #ffc15e, #9d8bff); animation: spin 6s linear infinite; box-shadow: 0 0 24px rgba(157,139,255,.6); position: relative; }
+.ask-orb::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: #0b0f1a; }
+.ask-orb[data-busy='true'] { animation-duration: .9s; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ask-level { font-size: 12px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line2); color: var(--muted); }
+.ask-chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0; }
+.ask-chips button { font-size: 12.5px; padding: 7px 11px; border-radius: 12px; background: rgba(255,255,255,.05); border: 1px solid var(--line); color: var(--ink); }
+.ask-chips button:hover { border-color: rgba(157,139,255,.6); }
+.ask-input { display: flex; gap: 6px; padding: 6px; border-radius: 16px; background: rgba(0,0,0,.35); border: 1px solid var(--line2); }
+.ask-input input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--ink); font: inherit; font-size: 14px; padding: 6px 8px; }
+.ask-mic, .ask-go { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+.ask-mic { border: 1px solid var(--line2); color: var(--muted); }
+.ask-mic.on { color: #fff; background: #ff4d3d; border-color: #ff4d3d; box-shadow: 0 0 20px #ff4d3d; animation: pulse 1s infinite; }
+.ask-go { background: linear-gradient(135deg, #9d8bff, #3be8e0); color: #06101a; font-weight: 700; }
+.ask-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(0,0,0,.25); border-top-color: #06101a; animation: spin .8s linear infinite; }
+.ask-answer { margin-top: 12px; padding: 14px; border-radius: 16px; background: rgba(0,0,0,.3); border: 1px solid var(--line); font-size: 14.5px; line-height: 1.6; }
+.ask-think { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.ask-think i { width: 7px; height: 7px; border-radius: 50%; background: var(--violet); animation: pulse 1s infinite; }
+.ask-think i:nth-child(2) { animation-delay: .2s; } .ask-think i:nth-child(3) { animation-delay: .4s; }
+.ask-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; align-items: center; }
+.ask-src, .ask-check, .ask-reason, .ask-speak { font-size: 11px; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+.ask-src.ai { color: #c9bfff; border-color: rgba(157,139,255,.5); }
+.ask-src.rules { color: var(--warm); border-color: rgba(255,193,94,.4); }
+.ask-check.ok { color: var(--mint); border-color: rgba(124,245,184,.35); }
+.ask-check.bad { color: #ff8a7a; border-color: rgba(255,77,61,.5); }
+.ask-speak { color: var(--ink); }
+@keyframes pulse { 50% { opacity: .35; } }

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { Link } from 'react-router-dom'
 import BreezeField from '../components/BreezeField'
 import { Heatmap, TempGauge, ThermalChart, thermal } from '../components/viz'
+import { AskPanel, factsFrom, useVoice } from '../components/Ask'
 import { analyse } from '../engine/signals'
 import { Kind, KIND_LABEL, simulate } from '../engine/simulate'
 import { Checkin, EMPTY_CHECKIN, TIER_META, triage, Ttc } from '../engine/rules'
@@ -80,9 +81,9 @@ const I = {
 export default function MobileApp() {
   const [s, setS] = useState<State>(load)
   const [tab, setTab] = useState<Tab>(() => (params.get('tab') as Tab) || 'home')
-  const [wide, setWide] = useState(() => window.innerWidth > 760)
+  const [wide, setWide] = useState(() => window.innerWidth > 760 && !params.has('embed'))
   const [scale, setScale] = useState(() => Math.min(1, (window.innerHeight - 40) / 876))
-  useEffect(() => { const f = () => { setWide(window.innerWidth > 760); setScale(Math.min(1, (window.innerHeight - 40) / 876)) }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
+  useEffect(() => { const f = () => { setWide(window.innerWidth > 760 && !params.has('embed')); setScale(Math.min(1, (window.innerHeight - 40) / 876)) }; window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
   useEffect(() => { try { localStorage.setItem(KEY, JSON.stringify(s)) } catch { /* ignore */ } }, [s])
   useEffect(() => { document.title = 'Alarzah · App' }, [])
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -312,6 +313,7 @@ function CheckIn() {
   const visible = QUESTIONS.filter(q => q.id !== 'partner35' || (s.answers.ttc && s.answers.ttc !== 'none'))
   const [i, setI] = useState(() => (params.has('q') ? Number(params.get('q')) : s.checkDone ? visible.length : 0))
   const [alarm, setAlarm] = useState<null | 'pain' | 'lump'>(() => (params.get('alarm') as 'pain' | 'lump') || null)
+  const voice = useVoice(s.lang)
   const q = visible[i]
   const answer = (v: boolean | Ttc | undefined) => {
     set({ answers: { ...s.answers, [q.id]: v } })
@@ -342,6 +344,11 @@ function CheckIn() {
         <motion.div key={q.id} className="glass q-card" initial={{ opacity: 0, x: 40, rotate: 1.5 }} animate={{ opacity: 1, x: 0, rotate: 0 }} exit={{ opacity: 0, x: -40, rotate: -1.5 }} transition={{ type: 'spring', stiffness: 260, damping: 26 }}>
           {q.redFlag && <span className="chip" style={{ color: '#ffb39a', borderColor: 'rgba(255,106,61,.5)', alignSelf: 'flex-start' }}>Safety question</span>}
           <div className="q-text">{s.lang === 'ar' ? q.ar : q.en}</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+            <button className="chip" onClick={() => voice.speak(s.lang === 'ar' ? q.ar : q.en)}>🔊 {s.lang === 'ar' ? 'استمع' : 'Listen'}</button>
+            {voice.canListen && q.kind !== 'ttc' && <button className="chip" style={voice.listening ? { color: '#fff', background: '#ff4d3d', borderColor: '#ff4d3d' } : undefined}
+              onClick={() => voice.listen(txt => { const y = /(yes|yeah|yep)|نعم|اي|أيوه/i.test(txt), n = /(no|nope)|لا/i.test(txt); if (y) answer(true); else if (n) answer(false) })}>🎙 {s.lang === 'ar' ? 'أجب بصوتك' : 'Answer by voice'}</button>}
+          </div>
           {(s.lang === 'ar' ? q.hintAr : q.hintEn) && <p className="muted" style={{ fontSize: 13, margin: '0 0 6px' }}>{s.lang === 'ar' ? q.hintAr : q.hintEn}</p>}
           <div style={{ marginTop: 'auto' }}>
             {q.kind === 'ttc'
@@ -479,6 +486,7 @@ function Care() {
   return (
     <>
       <Header title={t.nextStep} sub={tri.clipNote} />
+      <div style={{ marginBottom: 12 }}><AskPanel facts={factsFrom(tri, analysis)} lang={s.lang} compact /></div>
       {tri.recommendations.map((r, k) => {
         const m = TIER_META[r.tier]
         return (
