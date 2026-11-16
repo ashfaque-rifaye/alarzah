@@ -35,9 +35,9 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
     top.current!.position.y = 0.33 + e * 1.1
     board.current!.position.y = 0.26 + e * 0.38
     batt.current!.position.y = 0.16 - e * 0.28
-    base.current!.position.y = 0.06 - e * 0.75
-    padL.current!.position.set(-0.5 - e * 0.5, -0.95 - e * 0.45, 0.12 + e * 0.3)
-    padR.current!.position.set(0.5 + e * 0.5, -0.95 - e * 0.45, 0.12 + e * 0.3)
+    base.current!.position.y = 0.14 - e * 0.85
+    padL.current!.position.set(-0.5 - e * 0.5, -0.5 - e * 0.85, 0.06 + e * 0.3)
+    padR.current!.position.set(0.5 + e * 0.5, -0.5 - e * 0.85, 0.06 + e * 0.3)
     const l = (Math.sin(t * 0.7) + 1) / 2, r = (Math.sin(t * 0.7 + 1.9) + 1) / 2
     padMatL.current!.emissive.copy(thermalColor(0.55 + l * 0.45, tmp)); padMatL.current!.color.copy(padMatL.current!.emissive)
     padMatR.current!.emissive.copy(thermalColor(0.05 + r * 0.45, tmp)); padMatR.current!.color.copy(padMatR.current!.emissive)
@@ -68,13 +68,13 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
         {label(2, '200 mAh LiPo', '7 days of 1-minute samples', [1.3, -0.02, 0])}
       </group>
       <group ref={base}>
-        <RoundedBox args={[1.9, 0.2, 0.34]} radius={0.09} smoothness={6} material={shell} />
+        <RoundedBox args={[1.9, 0.3, 0.34]} radius={0.1} smoothness={6} material={shell} />
       </group>
       {[padL, padR].map((ref, k) => (
         <group key={k} ref={ref}>
           <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.27, 0.27, 0.05, 48]} /><meshStandardMaterial ref={k ? padMatR : padMatL} emissiveIntensity={0.75} roughness={0.35} /></mesh>
-          <mesh position={[0, 0.5, -0.04]}><boxGeometry args={[0.035, 0.95, 0.02]} /><meshStandardMaterial color="#c58b3a" metalness={0.8} roughness={0.35} /></mesh>
-          {label(3 + k, k ? 'Right pad · MAX30205' : 'Left pad · MAX30205', '±0.1 °C skin temperature', [0, -0.6, 0])}
+          <mesh position={[0, 0.3, -0.04]}><boxGeometry args={[0.05, 0.55, 0.015]} /><meshStandardMaterial color="#c58b3a" metalness={0.8} roughness={0.35} /></mesh>
+          {label(3 + k, k ? 'Right pad · MAX30205' : 'Left pad · MAX30205', '±0.1 °C skin temperature', [0, -0.55, 0])}
         </group>
       ))}
     </group>
