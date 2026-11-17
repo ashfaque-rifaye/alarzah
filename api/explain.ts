@@ -17,7 +17,7 @@ async function nvidia(req: ExplainRequest): Promise<{ text: string; model: strin
     const r = await fetch(NVIDIA_URL, {
       method: 'POST',
       signal: ctrl.signal,
-      headers: { authorization: `Bearer ${process.env.NVIDIA_API_KEY}`, 'content-type': 'application/json', accept: 'application/json' },
+      headers: { authorization: `Bearer ${(process.env.NVIDIA_API_KEY || "").trim().replace(/^"|"$/g, "")}`, 'content-type': 'application/json', accept: 'application/json' },
       body: JSON.stringify({
         model: NVIDIA_MODEL,
         max_tokens: 700,
