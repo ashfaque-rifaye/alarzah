@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alarzah demo stage</title>
+<style>
+  :root { --ink: #eaf2f4; --muted: #a6b6bd; --glow: #3be8e0; --gold: #ffc15e; --night: #071017; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--night); font-family: 'Segoe UI', system-ui, sans-serif; color: var(--ink); }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none;
+    background: radial-gradient(900px 700px at 88% 8%, rgba(59,232,224,.13), transparent 70%), radial-gradient(800px 600px at 6% 96%, rgba(255,160,70,.10), transparent 70%); }
+  .layer { position: absolute; transition: all .9s cubic-bezier(.65,0,.25,1); }
+  /* phone */
+  #phone { left: 1060px; top: 44px; width: 470px; height: 992px; border-radius: 68px; background: #1d252b; border: 3px solid #4e5c64;
+    box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 80px rgba(59,232,224,.12); padding: 20px; transform-origin: top left; }
+  #phone iframe { width: 430px; height: 952px; border: 0; border-radius: 50px; background: #000; display: block; }
+  #phone .island { position: absolute; top: 34px; left: 50%; width: 120px; height: 34px; margin-left: -60px; border-radius: 20px; background: #000; z-index: 2; }
+  /* console */
+  #desk { left: 2000px; top: 120px; width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; background: #0b141a; border: 2px solid #34444d;
+    box-shadow: 0 40px 120px rgba(0,0,0,.6); transform-origin: top left; transform: scale(.86); opacity: 0; }
+  #desk .bar { height: 40px; background: #141c22; display: flex; align-items: center; gap: 9px; padding: 0 16px; }
+  #desk .bar i { width: 13px; height: 13px; border-radius: 50%; display: block; }
+  #desk .bar span { margin-left: 18px; font: 500 15px 'Segoe UI'; color: #8fa1a9; background: #1e2a31; padding: 5px 16px; border-radius: 8px; }
+  #desk iframe { width: 1440px; height: 860px; border: 0; display: block; }
+  /* full-bleed site */
+  #site { inset: 0; opacity: 0; pointer-events: none; }
+  #site iframe { width: 1920px; height: 1080px; border: 0; }
+  /* captions */
+  #cap { left: 130px; top: 300px; width: 820px; }
+  #cap .step { font: 600 20px 'Bahnschrift', 'Segoe UI'; letter-spacing: .2em; color: var(--glow); text-transform: uppercase; }
+  #cap h1 { font: 600 66px/1.06 'Segoe UI Semibold', 'Segoe UI'; letter-spacing: -.02em; margin-top: 22px; }
+  #cap h1 em { font-style: normal; font-family: 'Segoe UI Semilight', 'Segoe UI'; font-weight: 300; color: var(--glow); }
+  #cap p { font: 400 27px/1.45 'Segoe UI'; color: var(--muted); margin-top: 26px; max-width: 760px; }
+  #cap .tagline { margin-top: 34px; display: inline-flex; gap: 12px; align-items: center; font: 500 19px 'Segoe UI'; color: var(--muted); }
+  #cap .tagline b { color: #0a1a1c; background: #7cf5b8; padding: 3px 10px; border-radius: 99px; font: 700 14px 'Segoe UI'; letter-spacing: .08em; }
+  #cap .fade { transition: opacity .45s ease, transform .45s ease; }
+  #cap.swap .fade { opacity: 0; transform: translateY(14px); }
+  /* split layout: phone left, console right, caption on top */
+  body.split #phone { left: 70px; top: 150px; transform: scale(.86); }
+  body.split #desk { left: 520px; top: 200px; opacity: 1; }
+  body.split #cap { left: 520px; top: 46px; width: 1340px; }
+  body.split #cap h1 { font-size: 46px; margin-top: 10px; }
+  body.split #cap p { display: none; }
+  body.split #cap .tagline { display: none; }
+  body.deskonly #phone { left: -600px; opacity: 0; }
+  body.deskonly #desk { left: 240px; top: 190px; opacity: 1; transform: scale(1); width: 1440px; }
+  body.deskonly #cap { left: 240px; top: 52px; width: 1440px; }
+  body.deskonly #cap h1 { font-size: 46px; margin-top: 10px; }
+  body.deskonly #cap p, body.deskonly #cap .tagline { display: none; }
+  body.site #site { opacity: 1; }
+  body.site #phone, body.site #desk { opacity: 0; }
+  body.site #cap { left: 70px; top: 880px; width: auto; background: rgba(7,16,23,.78); backdrop-filter: blur(14px); padding: 22px 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,.08); }
+  body.site #cap h1 { font-size: 38px; margin-top: 8px; }
+  body.site #cap p, body.site #cap .tagline { display: none; }
+  /* tap indicator */
+  .tap { position: absolute; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%; background: rgba(59,232,224,.35); border: 2px solid rgba(59,232,224,.9);
+    pointer-events: none; z-index: 50; animation: tap .7s ease-out forwards; }
+  @keyframes tap { from { transform: scale(.4); opacity: 1 } to { transform: scale(1.5); opacity: 0 } }
+  #brand { position: absolute; left: 130px; top: 60px; display: flex; align-items: center; gap: 14px; font: 600 26px 'Segoe UI Semibold'; transition: opacity .6s; }
+  #brand svg { width: 40px; height: 40px; }
+  body.split #brand, body.site #brand, body.deskonly #brand { opacity: 0; }
+  #sim { position: absolute; left: 130px; bottom: 30px; font: 400 15px 'Segoe UI'; color: #6e8089; }
+</style>
+</head>
+<body>
+<div id="brand"><svg viewBox="0 0 40 40"><rect width="40" height="40" rx="11" fill="#0e1b22"/><path d="M9 16c4-4 8 4 12 0s8-4 10 0M9 23c4-4 8 4 12 0s8-4 10 0" stroke="#3be8e0" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>Alarzah</div>
+<div id="site" class="layer"><iframe id="siteF" title="site"></iframe></div>
+<div id="cap" class="layer"><div class="fade">
+  <div class="step" id="step"></div>
+  <h1 id="h"></h1>
+  <p id="p"></p>
+  <div class="tagline" id="tl"><b>LIVE</b><span id="url">alarzah.vercel.app/app</span></div>
+</div></div>
+<div id="phone" class="layer"><iframe id="appF" title="app"></iframe></div>
+<div id="desk" class="layer"><div class="bar"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i><span id="deskUrl">alarzah.vercel.app/clinic</span></div><iframe id="deskF" title="console"></iframe></div>
+<div id="sim">Readings, cases and lab results are simulated · the engine, rules, checks and review loop are real</div>
+<script>
+  window.stage = {
+    caption(step, h, p, url) {
+      const c = document.getElementById('cap'); c.classList.add('swap')
+      setTimeout(() => {
+        document.getElementById('step').textContent = step
+        document.getElementById('h').innerHTML = h
+        document.getElementById('p').textContent = p || ''
+        if (url) document.getElementById('url').textContent = url
+        c.classList.remove('swap')
+      }, 450)
+    },
+    layout(name) { document.body.className = name || '' },
+    deskUrl(u) { document.getElementById('deskUrl').textContent = u },
+    tap(x, y) { const d = document.createElement('div'); d.className = 'tap'; d.style.left = x + 'px'; d.style.top = y + 'px'; document.body.appendChild(d); setTimeout(() => d.remove(), 800) },
+  }
+</script>
+</body>
+</html>
