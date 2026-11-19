@@ -74,7 +74,7 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
         <group key={k} ref={ref}>
           <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.27, 0.27, 0.05, 48]} /><meshStandardMaterial ref={k ? padMatR : padMatL} emissiveIntensity={0.75} roughness={0.35} /></mesh>
           <mesh position={[0, 0.3, -0.04]}><boxGeometry args={[0.05, 0.55, 0.015]} /><meshStandardMaterial color="#c58b3a" metalness={0.8} roughness={0.35} /></mesh>
-          {label(3 + k, k ? 'Right pad · MAX30205' : 'Left pad · MAX30205', '±0.1 °C skin temperature', [0, -0.55, 0])}
+          {label(3 + k, k ? 'Right pad · TMP117' : 'Left pad · TMP117', '±0.1 °C skin temperature', [0, -0.55, 0])}
         </group>
       ))}
     </group>

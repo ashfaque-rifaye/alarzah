@@ -4,6 +4,7 @@ import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from '
 import { Link } from 'react-router-dom'
 import { AskPanel, factsFrom } from '../components/Ask'
 import { CountUp, Heatmap, ThermalChart } from '../components/viz'
+import { CLIP_PARTS, CLIP_SAFETY, CLIP_SPECS, CLIP_STATUS, ClipExploded, POD_PARTS, StepIcon, WEAR_STEPS } from '../components/Device'
 import { analyse } from '../engine/signals'
 import { Kind, KIND_LABEL, simulate } from '../engine/simulate'
 import { EMPTY_CHECKIN, TIER_META, TIER_ORDER, triage } from '../engine/rules'
@@ -78,7 +79,7 @@ export default function Landing() {
       <Cursor />
       <nav className="l-nav glass">
         <Link to="/" style={{ display: 'flex', gap: 10, alignItems: 'center' }}><img src="/icon.svg" width={28} height={28} alt="" /><b style={{ fontFamily: 'var(--display)', fontSize: 18 }}>Alarzah</b></Link>
-        <div className="l-links"><a className="nl" href="#problem">Problem</a><a className="nl" href="#inside">The Clip</a><a className="nl" href="#signals">Signals + AI</a><a className="nl" href="#product">Product</a><a className="nl" href="#honest">Limits</a></div>
+        <div className="l-links"><a className="nl" href="#problem">Problem</a><a className="nl" href="#inside">The Clip</a><a className="nl" href="#hardware">Hardware</a><a className="nl" href="#signals">Signals + AI</a><a className="nl" href="#product">Product</a><a className="nl" href="#honest">Limits</a></div>
         <div style={{ display: 'flex', gap: 8 }}><Link className="btn btn-ghost nav-ghost" style={{ padding: '10px 14px', fontSize: 14 }} to="/clinic">Clinician console</Link><Link className="btn btn-primary" style={{ padding: '10px 16px', fontSize: 14 }} to="/app">Open the app</Link></div>
       </nav>
 
@@ -135,6 +136,7 @@ export default function Landing() {
       </div></section>
 
       <Inside />
+      <Hardware />
 
       <section className="l-section" id="how"><div className="l-wrap">
         <motion.div {...reveal}><div className="eyebrow">How it works</div></motion.div>
@@ -184,7 +186,7 @@ export default function Landing() {
         <div className="l-honest">
           {[['Thresholds are provisional', 'The 35.0 °C heat line and the 0.6 °C left/right rule come from small studies. A pilot must calibrate them.'],
             ['No validated product exists yet', 'Wearable scrotal temperature is supported by research, not by a cleared device. The Clip is a screening prompt, not a diagnosis.'],
-            ['Readings here are simulated', 'The demo uses synthetic 7-day traces with known ground truth. The engine is real; the physiology is not.'],
+            ['Skin readings need the Clip', 'The app streams real outdoor heat, the phone’s own motion sensor and any real Bluetooth thermometer today. Without a Clip, skin readings are a labelled preview; the Clip is a reference design, not yet a finished device.'],
             ['Our own benchmark shows misses', 'On 60 simulated weeks the left/right rule caught 72% of patterns, with no false alarms. Borderline cases are included on purpose.']].map(([h, d]) => (
             <motion.div key={h} {...reveal}><b>{h}</b><p className="muted" style={{ margin: '6px 0 0' }}>{d}</p></motion.div>))}
         </div>
@@ -207,9 +209,9 @@ export default function Landing() {
 const STEPS = [
   { k: 'Assembled', t: 'The size of a key fob.', d: 'It clips into ordinary underwear. Nothing to see, nothing to hear, nothing to charge for a week.' },
   { k: 'Shell', t: 'No camera. No microphone.', d: 'Washable medical silicone. Privacy is enforced by what the hardware simply does not have.' },
-  { k: 'Sensors', t: 'Left and right, ±0.1 °C.', d: 'Two MAX30205 skin sensors read each side once a minute. The difference between them is the signal.' },
+  { k: 'Sensors', t: 'Left and right, ±0.1 °C.', d: 'Two Texas Instruments TMP117 sensors read each side once a minute, accurate to ±0.1 °C across the 32–35 °C range scrotal skin sits in. The difference between them is the signal.' },
   { k: 'Motion', t: 'It knows lying from upright.', d: 'A varicocele fills when standing. A difference that appears upright and fades lying down is the pattern worth an examination.' },
-  { k: 'Phone', t: 'Computed on his phone.', d: 'Bluetooth to the app. Fixed rules turn 1,008 samples into heat load and the left/right pattern. Nothing goes to a server.' },
+  { k: 'Phone', t: 'Computed on his phone.', d: 'An nRF52832 radio stores the week and syncs over the standard Bluetooth Health Thermometer profile. Fixed rules on the phone turn it into heat load and the left/right pattern. Nothing goes to a server.' },
 ]
 function Inside() {
   const ref = useRef<HTMLDivElement>(null)
@@ -308,7 +310,7 @@ function Product() {
         <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
           <motion.div className="l-browser" {...reveal}>
             <div className="l-browser-bar"><i /><i /><i /><span>alarzah.vercel.app/clinic</span></div>
-            <div className="l-browser-body"><iframe title="Alarzah clinician console (live)" src="/clinic" loading="lazy" /></div>
+            <div className="l-browser-body"><iframe title="Alarzah clinician console (live)" src="/clinic/queue?embed=1" loading="lazy" /></div>
           </motion.div>
           <motion.div className="l-feature-grid" {...reveal}>
             {[['Installable', 'Add to Home Screen: full-screen, offline'], ['Voice', 'Questions read aloud; answer by voice'], ['Arabic first', 'Full right-to-left layout'], ['Sign-off', 'Every referral reviewed by a clinician']].map(([h, d]) => <div key={h} className="glass"><b>{h}</b><span className="muted">{d}</span></div>)}
@@ -342,6 +344,56 @@ function Ladder() {
             <span className="mono dim">R{k + 1}</span>
           </motion.div>))}
       </div>
+    </div></section>
+  )
+}
+
+/* ---------- Hardware: the reference design, how the test is done, safety ---------- */
+function Hardware() {
+  const ref = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'center center'] })
+  const [open, setOpen] = useState(0)
+  useMotionValueEvent(scrollYProgress, 'change', v => setOpen(Math.min(1, Math.max(0, v * 1.15))))
+  return (
+    <section className="l-section" id="hardware" ref={ref}><div className="l-wrap">
+      <motion.div {...reveal}><div className="eyebrow">The hardware · reference design</div></motion.div>
+      <Words className="l-h2" text="Real parts. *Nothing* *exotic.*" />
+      <motion.p className="l-lede" {...reveal}>Every part of the Clip is an off-the-shelf, datasheet-backed component. It only listens to temperature, runs on a coin cell and speaks the standard Bluetooth thermometer profile, so the app can already stream from a real device.</motion.p>
+      <div className="l-hw">
+        <motion.div className="glass l-hw-art" {...reveal}>
+          <span className="chip" style={{ color: 'var(--warm)' }}><span className="dot" style={{ background: 'var(--warm)', boxShadow: '0 0 10px var(--warm)' }} />{CLIP_STATUS}</span>
+          <ClipExploded open={open} />
+        </motion.div>
+        <div className="l-hw-parts">
+          {CLIP_PARTS.map((p, k) => (
+            <motion.div key={p.id} className="l-part" style={{ ['--c' as string]: p.color }} initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: k * 0.06 }}>
+              <div><b>{p.name}</b><span className="mono">{p.part}</span></div><p>{p.detail}</p>
+            </motion.div>))}
+        </div>
+      </div>
+      <div className="l-hw-grid">
+        <motion.div className="glass l-surface" {...reveal} style={{ minHeight: 0 }}>
+          <div className="eyebrow">Specification</div>
+          <div className="l-spec">{CLIP_SPECS.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
+        </motion.div>
+        <motion.div className="glass l-surface" {...reveal} style={{ minHeight: 0 }}>
+          <div className="eyebrow" style={{ color: 'var(--mint)' }}>Safety by design</div>
+          <div className="l-spec">{CLIP_SAFETY.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
+        </motion.div>
+      </div>
+      <motion.div {...reveal} style={{ marginTop: 70 }}><div className="eyebrow">How the test is done</div></motion.div>
+      <Words className="l-h2" text="Six steps, *at* *home.*" />
+      <div className="l-wear">
+        {WEAR_STEPS.map((x, k) => (
+          <motion.div key={k} className="glass l-wstep" initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: k * 0.07 }}>
+            <div className="l-wstep-top"><span className="mono">{String(k + 1).padStart(2, '0')}</span><i><StepIcon k={x.icon} /></i></div>
+            <b>{x.t}</b><p className="muted">{x.d}</p>
+          </motion.div>))}
+      </div>
+      <motion.div className="glass l-surface l-pod" {...reveal} style={{ minHeight: 0, marginTop: 16 }}>
+        <div><div className="eyebrow" style={{ color: 'var(--warm)' }}>And the Pod · home sample to lab</div><p className="muted" style={{ marginTop: 10 }}>Collected at home, not in a clinic room. The Pod keeps the sample at 20–37 °C and counts down the WHO 60-minute window; the lab only ever sees a code.</p></div>
+        <div className="l-spec">{POD_PARTS.map(([k, v]) => <div key={k}><span>{k}</span><b>{v}</b></div>)}</div>
+      </motion.div>
     </div></section>
   )
 }

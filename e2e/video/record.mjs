@@ -92,7 +92,7 @@ scene('checkin', async () => {
 
 scene('clip', async () => {
   await cap('03 · The Clip', 'A week of skin temperature, <em>read in seconds</em>', 'Heat load: hours per day at or above 35 °C. Left/right pattern: the shape of a varicocele filling when upright.')
-  await tab('Clip'); await tap('appF', 'Use the demo Clip', { pause: 1800 })
+  await tab('Clip'); await tap('appF', 'Preview with a sample stream', { pause: 1800 })
   await tap('appF', 'Heat + pattern', { pause: 900 }); await tap('appF', 'Fast-forward 7 days', { pause: 3500 })
   await scrollApp(520, 2600); await scrollApp(1100, 2600); await scrollApp(0, 1200)
 })
@@ -109,7 +109,7 @@ scene('care', async () => {
 scene('review', async () => {
   await cap('06 · Clinician review', 'He sends it. <em>A clinician sees it live.</em>', 'An anonymous case code, never a name.')
   await tap('appF', 'Send for clinician review', { pause: 1800 })
-  await load('deskF', BASE + '/clinic', 1500)
+  await load('deskF', BASE + '/clinic/queue?notour=1', 1500)
   await layout('split')
   await cap('06 · Clinician review', 'The case arrives <em>LIVE</em> at the top of the clinician queue')
   await sleep(4200)

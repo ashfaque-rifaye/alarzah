@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alarzah film titles</title>
+<style>
+  :root { --ink: #eef5f6; --muted: #9fb2ba; --dim: #7d919a; --glow: #3be8e0; --gold: #ffc15e; --ember: #ff7a45; --night: #060e14; }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--night); color: var(--ink); font-family: 'Segoe UI', system-ui, sans-serif; }
+  .abs { position: absolute; }
+  .full { position: absolute; inset: 0; }
+  canvas { position: absolute; inset: 0; }
+  .photo { position: absolute; inset: -10px; background-size: cover; background-position: center; opacity: 0; will-change: transform, opacity; }
+  .shade { background: radial-gradient(1200px 800px at 50% 50%, rgba(6,14,20,.35), rgba(6,14,20,.92) 75%), linear-gradient(180deg, rgba(6,14,20,.2), rgba(6,14,20,.7)); }
+  .vignette { background: radial-gradient(1400px 900px at 50% 50%, transparent 55%, rgba(0,0,0,.55)); pointer-events: none; }
+  .mono { font-family: 'Cascadia Mono', 'Consolas', monospace; letter-spacing: .22em; text-transform: uppercase; }
+  .kick { font: 600 19px 'Bahnschrift', 'Segoe UI'; letter-spacing: .26em; text-transform: uppercase; color: var(--glow); }
+  .line { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font: 300 104px/1.05 'Segoe UI'; letter-spacing: -.025em; }
+  .line b { font-weight: 600; }
+  .w { display: inline-block; white-space: pre; will-change: transform, filter, opacity; }
+  .hot { color: var(--gold); } .cool { color: var(--glow); }
+  #label { left: 0; right: 0; top: 640px; text-align: center; font-size: 16px; color: var(--dim); }
+  #stat1 { left: 0; right: 0; top: 330px; text-align: center; font: 600 170px/1 'Segoe UI'; color: var(--gold); letter-spacing: -.03em; }
+  #stat2 { left: 0; right: 0; top: 400px; text-align: center; font: 600 260px/1 'Segoe UI'; color: var(--glow); letter-spacing: -.04em; text-shadow: 0 0 80px rgba(59,232,224,.35); }
+  #statCap { left: 0; right: 0; top: 700px; text-align: center; font: 300 38px 'Segoe UI'; color: var(--ink); }
+  #statSrc { left: 0; right: 0; top: 770px; text-align: center; font-size: 16px; color: var(--dim); }
+  #stage3d { position: absolute; inset: 0; perspective: 1700px; perspective-origin: 60% 45%; }
+  .card { position: absolute; border-radius: 26px; overflow: hidden; box-shadow: 0 50px 120px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.07); will-change: transform, opacity, filter; transform-style: preserve-3d; }
+  .card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  #cConsole { left: 660px; top: 110px; width: 1100px; height: 716px; border-radius: 18px; }
+  #cPhone { left: 1330px; top: 150px; width: 410px; height: 802px; border-radius: 52px; box-shadow: 0 60px 140px rgba(0,0,0,.75); }
+  #cClip { left: 700px; top: 250px; width: 940px; height: 537px; }
+  #say { left: 120px; top: 800px; font: 300 96px/1 'Segoe UI'; letter-spacing: -.03em; }
+  #say b { font-weight: 600; color: var(--glow); }
+  #saySub { left: 124px; top: 925px; font-size: 16px; color: var(--muted); }
+  #logo { left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; }
+  #flash { background: radial-gradient(700px 500px at 50% 50%, rgba(59,232,224,.55), transparent 70%); opacity: 0; mix-blend-mode: screen; }
+  #word { left: 0; right: 0; top: 560px; text-align: center; font: 600 132px/1 'Segoe UI'; letter-spacing: -.035em; }
+  #tag { left: 0; right: 0; top: 720px; text-align: center; font: 300 40px 'Segoe UI'; color: var(--muted); }
+  #tag span { color: var(--glow); }
+  #foot { left: 0; right: 0; top: 960px; text-align: center; font-size: 15px; color: var(--dim); }
+  /* outro */
+  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 11px 20px; border-radius: 99px; background: rgba(18,32,40,.72); border: 1px solid rgba(255,255,255,.09); font: 500 21px 'Segoe UI'; color: var(--ink); margin: 0 6px; }
+  .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--glow); display: block; }
+  .row { position: absolute; left: 0; right: 0; text-align: center; }
+  .pill3 { font: 300 34px 'Segoe UI'; color: var(--ink); }
+  .pill3 em { font-style: normal; color: var(--dim); margin: 0 22px; }
+  .try { position: absolute; top: 790px; }
+  .try .k { font-size: 15px; color: var(--dim); }
+  .try .v { font: 600 34px 'Segoe UI'; margin-top: 10px; }
+  .try .v span { color: var(--glow); }
+  .qr { position: absolute; top: 760px; width: 150px; height: 150px; background: #fff; border-radius: 16px; padding: 10px; }
+  .qr img { width: 100%; height: 100%; display: block; }
+  .qrl { position: absolute; top: 924px; width: 150px; text-align: center; font-size: 14px; color: var(--dim); }
+  #grain { opacity: .07; mix-blend-mode: overlay; }
+</style>
+</head>
+<body>
+<canvas id="rings" width="1920" height="1080"></canvas>
+<div class="photo" id="pTaxi" style="background-image:url(assets/taxi.jpg)"></div>
+<div class="photo" id="pGym" style="background-image:url(assets/gym.jpg)"></div>
+<div class="photo" id="pBal" style="background-image:url(assets/balcony.jpg)"></div>
+<div class="full shade" id="shade" style="opacity:0"></div>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="abs mono" id="label">Alarzah&nbsp;&nbsp;·&nbsp;&nbsp;Future Health 2026&nbsp;&nbsp;·&nbsp;&nbsp;Challenge 01&nbsp;&nbsp;·&nbsp;&nbsp;Abu Dhabi</div>
+  <div class="line" id="L1"></div>
+  <div class="line" id="L2"></div>
+  <div class="line" id="L3"></div>
+  <div class="line" id="L4"></div>
+  <div class="abs" id="stat1">+1&thinsp;°C</div>
+  <div class="abs" id="stat2">−0%</div>
+  <div class="abs" id="statCap">lower sperm concentration per 1&thinsp;°C rise in daytime scrotal temperature</div>
+  <div class="abs mono" id="statSrc">Hjollund et al., 2002&nbsp;&nbsp;·&nbsp;&nbsp;99 men</div>
+  <div id="stage3d">
+    <div class="card" id="cConsole"><img src="assets/B_d_console_live.jpg"></div>
+    <div class="card" id="cClip"><img src="assets/clip.jpg"></div>
+    <div class="card" id="cPhone"><img src="assets/P_m_home.jpg"></div>
+  </div>
+  <div class="abs" id="say"></div>
+  <div class="abs mono" id="saySub"></div>
+</div>
+
+<div class="full" id="flash"></div>
+<svg class="abs" id="logo" viewBox="0 0 40 40">
+  <defs><filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <rect id="lgRect" x=".5" y=".5" width="39" height="39" rx="11" fill="#0e1b22" stroke="rgba(59,232,224,.35)" stroke-width=".4"/>
+  <path id="lgW1" d="M9 16c4-4 8 4 12 0s8-4 10 0" stroke="#3be8e0" stroke-width="2.6" fill="none" stroke-linecap="round" filter="url(#gl)"/>
+  <path id="lgW2" d="M9 23c4-4 8 4 12 0s8-4 10 0" stroke="#ffc15e" stroke-width="2.6" fill="none" stroke-linecap="round" filter="url(#gl)"/>
+</svg>
+<div class="abs" id="word"></div>
+<div class="abs" id="tag">A quiet front door to <span>men’s reproductive health</span></div>
+<div class="abs mono" id="foot"></div>
+
+<!-- OUTRO -->
+<div id="outro" style="display:none">
+  <div class="row pill3" id="o3" style="top:640px"><span class="w">Anonymous by default</span><em class="w">·</em><span class="w">Rules decide, AI explains</span><em class="w">·</em><span class="w">A clinician signs off</span></div>
+  <div class="row" id="oBuilt" style="top:500px"><div class="mono" style="font-size:15px;color:var(--dim);margin-bottom:18px" id="oBuiltK">Built with</div>
+    <span class="chip w"><i></i>NVIDIA Nemotron</span><span class="chip w"><i style="background:var(--gold)"></i>Fixed rules R1–R8</span><span class="chip w"><i style="background:var(--gold)"></i>WHO 2021 limits</span><span class="chip w"><i></i>React · Vite · Three.js</span><span class="chip w"><i></i>PWA · Arabic + English</span><span class="chip w"><i></i>Vercel</span></div>
+  <div class="try" id="t1" style="left:150px"><div class="k mono">Try it</div><div class="v">alarzah.vercel.app</div></div>
+  <div class="try" id="t2" style="left:640px"><div class="k mono">The man’s app</div><div class="v"><span>/</span>app</div></div>
+  <div class="try" id="t3" style="left:960px"><div class="k mono">Clinician console</div><div class="v"><span>/</span>clinic</div></div>
+  <div class="qr" id="q1" style="left:1440px"><img src="assets/qr_site.png"></div><div class="qrl mono" id="q1l" style="left:1440px">Site</div>
+  <div class="qr" id="q2" style="left:1620px"><img src="assets/qr_app.png"></div><div class="qrl mono" id="q2l" style="left:1620px">App</div>
+</div>
+<canvas id="grain" width="960" height="540" style="width:1920px;height:1080px"></canvas>
+<div class="full vignette"></div>
+
+<script>
+const PART = new URLSearchParams(location.search).get('part') || 'intro'
+const $ = id => document.getElementById(id)
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const seg = (t, a, b) => clamp((t - a) / (b - a))
+const eo = x => 1 - Math.pow(1 - x, 3), eo5 = x => 1 - Math.pow(1 - x, 5), ei = x => x * x * x
+const eio = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
+const lerp = (a, b, x) => a + (b - a) * x
+
+// words: split "Long shifts in |the heat.|" → spans; |...| = bold + colour class
+function words(el, html) {
+  el.innerHTML = ''
+  html.split(/(\[[^\]]+\])/).forEach(part => {
+    if (!part) return
+    const hot = part.startsWith('[')
+    const txt = hot ? part.slice(1, -1) : part
+    const cls = hot ? (txt.includes('|c') ? 'cool' : 'hot') : ''
+    txt.replace('|c', '').split(/(?<= )/).forEach(w => {
+      const s = document.createElement(hot ? 'b' : 'span'); s.className = 'w ' + cls; s.textContent = w; el.appendChild(s)
+    })
+  })
+  return [...el.querySelectorAll('.w')]
+}
+// one kinetic line: words blur in with a stagger, the whole line blurs out
+function kinetic(spans, t, a, b, { stag = .065, dur = .5, out = .32, rise = 34 } = {}) {
+  const el = spans[0] && spans[0].parentElement
+  if (t < a - .01 || t > b + .01) { el.style.opacity = 0; return }
+  el.style.opacity = 1
+  const o = seg(t, b - out, b)
+  spans.forEach((s, i) => {
+    const p = eo5(seg(t, a + i * stag, a + i * stag + dur))
+    s.style.opacity = p * (1 - o)
+    s.style.filter = `blur(${(1 - p) * 16 + o * 18}px)`
+    s.style.transform = `translateY(${(1 - p) * rise - o * 10}px) scale(${1 + o * .05})`
+  })
+}
+function fadeEl(el, t, a, b, inD = .4, outD = .35, { y = 20, blur = 10 } = {}) {
+  const p = eo5(seg(t, a, a + inD)), o = b == null ? 0 : ei(seg(t, b - outD, b))
+  el.style.opacity = p * (1 - o)
+  el.style.filter = `blur(${(1 - p) * blur + o * blur}px)`
+  el.style.transform = `translateY(${(1 - p) * y}px)`
+}
+
+// ---------- rings: thermal isotherms ----------
+const rc = $('rings').getContext('2d')
+function noise(a, k, ph) { return Math.sin(a * 3 + k * .7 + ph) * .55 + Math.sin(a * 5 - k * .4 + ph * 1.7) * .3 + Math.sin(a * 2 + k * 1.3 - ph * .6) * .45 }
+function rings(t, { alpha = .5, cx = 960, cy = 540, gap = 34, r0 = 60, amp = 16, n = 30, ph = t * .55 } = {}) {
+  rc.clearRect(0, 0, 1920, 1080)
+  if (alpha <= .002) return
+  for (let k = 0; k < n; k++) {
+    const r = r0 + k * gap
+    const f = k / (n - 1)
+    const col = f < .5 ? [59 + (255 - 59) * f * 2, 232 - (232 - 193) * f * 2, 224 - (224 - 94) * f * 2] : [255, 193 - (193 - 122) * (f - .5) * 2, 94 - (94 - 69) * (f - .5) * 2]
+    rc.strokeStyle = `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${alpha * (1 - f * .75)})`
+    rc.lineWidth = k % 5 === 0 ? 1.6 : .9
+    rc.beginPath()
+    for (let i = 0; i <= 160; i++) {
+      const a = i / 160 * Math.PI * 2
+      const rr = r + amp * (1 + f * 2) * noise(a, k, ph)
+      const x = cx + Math.cos(a) * rr * 1.25, y = cy + Math.sin(a) * rr
+      i ? rc.lineTo(x, y) : rc.moveTo(x, y)
+    }
+    rc.stroke()
+  }
+}
+// ---------- film grain (deterministic) ----------
+const gc = $('grain').getContext('2d'); const gimg = gc.createImageData(960, 540)
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+const grainFrames = [...Array(6)].map(() => { const d = new Uint8ClampedArray(960 * 540 * 4); for (let i = 0; i < d.length; i += 4) { const v = rnd() * 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255 } return d })
+function grain(t) { gimg.data.set(grainFrames[Math.floor(t * 24) % 6]); gc.putImageData(gimg, 0, 0) }
+
+function photo(el, t, a, b, x = 0) {
+  const fi = .35, p = seg(t, a - fi / 2, a + fi / 2), o = seg(t, b - fi / 2, b + fi / 2)
+  el.style.opacity = eio(p) * (1 - eio(o)) * .85
+  const life = seg(t, a - .3, b + .3)
+  el.style.transform = `scale(${1.14 - life * .1}) translateX(${x * life}px)`
+}
+const W1 = $('lgW1'), W2 = $('lgW2'); const LEN = W1.getTotalLength()
+function logo(t, a, { x = 960, y = 540, size = 220, fadeOut = null } = {}) {
+  const L = $('logo')
+  const p = seg(t, a, a + .9)
+  L.style.width = L.style.height = size + 'px'; L.style.left = x + 'px'; L.style.top = y + 'px'; L.style.margin = `${-size / 2}px 0 0 ${-size / 2}px`
+  const o = fadeOut ? seg(t, fadeOut[0], fadeOut[1]) : 0
+  L.style.opacity = eo(seg(t, a, a + .3)) * (1 - o)
+  L.style.transform = `scale(${lerp(.7, 1, eo5(seg(t, a, a + .8)))}) rotate(${lerp(-8, 0, eo5(seg(t, a, a + .9)))}deg)`
+  ;[W1, W2].forEach((w, i) => { const q = eo(seg(t, a + .15 + i * .14, a + .75 + i * .14)); w.style.strokeDasharray = LEN; w.style.strokeDashoffset = LEN * (1 - q) })
+  $('lgRect').style.opacity = eo(seg(t, a, a + .5))
+}
+function wordmark(spans, t, a, outAt) {
+  spans.forEach((s, i) => {
+    const p = eo5(seg(t, a + i * .045, a + i * .045 + .7)), o = outAt ? ei(seg(t, outAt[0], outAt[1])) : 0
+    s.style.opacity = p * (1 - o); s.style.filter = `blur(${(1 - p) * 20 + o * 14}px)`
+    s.style.transform = `translateY(${(1 - p) * 40}px)`
+  })
+}
+
+// ---------- INTRO (14 s) ----------
+const L1 = words($('L1'), 'Long shifts in [the heat.]'), L2 = words($('L2'), 'A steroid cycle at [the gym.]'), L3 = words($('L3'), 'Not a word to [anyone.]'), L4 = words($('L4'), 'Men are assessed [late.|c]')
+const WM = words($('word'), 'Alarzah')
+const SAY = [['Measure ', 'it.', 'The Clip  ·  heat and left / right pattern, at home'], ['Ask ', 'it.', 'The app  ·  private, anonymous, Arabic + English'], ['Act on ', 'it.', 'The console  ·  a clinician signs off every next step']]
+function intro(t) {
+  // rings: strong in the opening, faint under photos, collapse into the logo
+  const conv = eio(seg(t, 10.35, 11.25))
+  const burst = eo(seg(t, 11.2, 13.8))
+  let ra = lerp(.55, .12, seg(t, 1.2, 1.7)); if (t > 6.6) ra = lerp(.12, .3, seg(t, 6.6, 7.2)); if (t > 10.3) ra = lerp(.3, .75, conv); if (t > 11.2) ra = lerp(.75, .22, seg(t, 11.2, 12.4))
+  const r0 = t < 1.6 ? lerp(0, 60, eo(seg(t, 0, 1.4))) : 60
+  const gap = t > 11.2 ? lerp(4, 44, burst) : lerp(34, 4, conv)
+  rings(t, { alpha: ra * (1 - seg(t, 13.3, 14)), r0: t > 11.2 ? lerp(110, 140, burst) : lerp(r0, 110 * conv + r0 * (1 - conv), 1), gap, n: t < 1.6 ? Math.max(1, Math.round(30 * eo(seg(t, 0, 1.4)))) : 30, amp: lerp(16, 3, conv) * (t > 11.2 ? lerp(.2, 1, burst) : 1) })
+  fadeEl($('label'), t, .35, 1.45, .6, .3, { y: 0, blur: 6 })
+  photo($('pTaxi'), t, 1.4, 2.45, -40); photo($('pGym'), t, 2.45, 3.5, 40); photo($('pBal'), t, 3.5, 4.6, -30)
+  $('shade').style.opacity = seg(t, 1.2, 1.5) * (1 - seg(t, 4.5, 4.8))
+  kinetic(L1, t, 1.45, 2.42); kinetic(L2, t, 2.47, 3.47); kinetic(L3, t, 3.52, 4.6, { stag: .09 })
+  // stat: +1 °C, then −40 % counts up
+  const s1 = $('stat1'), p1 = eo5(seg(t, 4.6, 5.0)), m1 = eio(seg(t, 5.1, 5.55)), x1 = ei(seg(t, 6.35, 6.6))
+  s1.style.opacity = p1 * (1 - x1); s1.style.filter = `blur(${(1 - p1) * 18 + x1 * 14}px)`
+  s1.style.transform = `translateY(${lerp(80, -170, m1)}px) scale(${lerp(1, .42, m1)})`
+  const s2 = $('stat2'), p2 = eo5(seg(t, 5.25, 5.7))
+  s2.style.opacity = p2 * (1 - x1); s2.style.filter = `blur(${(1 - p2) * 20 + x1 * 16}px)`; s2.style.transform = `scale(${lerp(.9, 1, p2) + x1 * .06})`
+  s2.textContent = '−' + Math.round(40 * eo(seg(t, 5.3, 6.05))) + '%'
+  fadeEl($('statCap'), t, 5.6, 6.6, .4, .25); fadeEl($('statSrc'), t, 5.8, 6.6, .4, .25, { y: 8 })
+  kinetic(L4, t, 6.65, 7.85, { stag: .08 })
+  // product cards in 3D
+  const cards = [['cClip', 7.95, -240], ['cPhone', 8.85, 0], ['cConsole', 9.75, 0]]
+  const exit = eio(seg(t, 10.2, 10.75)), drift = seg(t, 7.9, 10.8)
+  cards.forEach(([id, a], i) => {
+    const el = $(id), p = eo5(seg(t, a - .1, a + .6)), next = i < 2 ? cards[i + 1][1] : 99
+    const rec = eio(seg(t, next - .15, next + .45))           // recede when the next card takes over
+    el.style.opacity = p * (1 - exit) * (1 - rec * .35)
+    el.style.filter = `blur(${(1 - p) * 14 + exit * 18 + rec * 3}px) brightness(${1 - rec * .5})`
+    const rx = 8 - drift * 5, ry = -20 + drift * 12
+    const dx = [-330, 120, -120][i] * rec
+    el.style.transform = `translate3d(${lerp(220, 0, p) + dx - exit * (i - 1) * 300}px, ${lerp(80, 0, p) + exit * 60}px, ${lerp(-600, 0, p) - rec * 420 - exit * 900}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${-2 + drift * 2}deg)`
+    el.style.zIndex = 10 - Math.round(rec * 5) + i
+  })
+  const si = t < 8.85 ? 0 : t < 9.75 ? 1 : 2, sa = [7.95, 8.85, 9.75][si], sb = [8.85, 9.75, 10.6][si]
+  if (t >= 7.9 && t < 10.6) {
+    $('say').innerHTML = `${SAY[si][0]}<b>${SAY[si][1]}</b>`; $('saySub').textContent = SAY[si][2]
+    fadeEl($('say'), t, sa, sb, .35, .22, { y: 30, blur: 14 }); fadeEl($('saySub'), t, sa + .1, sb, .35, .22, { y: 10, blur: 6 })
+  } else { $('say').style.opacity = 0; $('saySub').style.opacity = 0 }
+  // logo + wordmark
+  logo(t, 10.75, { y: lerp(540, 390, eio(seg(t, 11.6, 12.3))), fadeOut: [13.3, 14] })
+  $('flash').style.opacity = Math.max(0, 1 - Math.abs(t - 11.35) / .45) * .9
+  wordmark(WM, t, 11.75, [13.3, 14])
+  fadeEl($('tag'), t, 12.25, 14, .55, .7, { y: 16, blur: 8 })
+  $('foot').textContent = 'Future Health Digital Innovation Challenge 2026  ·  Challenge 01  ·  Male reproductive health'
+  fadeEl($('foot'), t, 12.6, 14, .5, .7, { y: 0, blur: 4 })
+}
+
+// ---------- OUTRO (10 s) ----------
+const O3 = [...$('o3').querySelectorAll('.w')], OB = [...$('oBuilt').querySelectorAll('.chip')]
+function outro(t) {
+  const out = ei(seg(t, 8.7, 9.9))
+  rings(t, { alpha: lerp(0, .3, eo(seg(t, 0, 1.2))) * (1 - out), cy: 300, r0: lerp(20, 90, eo(seg(t, 0, 2))), gap: lerp(10, 40, eo(seg(t, 0, 2.5))), amp: 10 })
+  logo(t, .25, { x: 960, y: 225, size: 150, fadeOut: [8.7, 9.9] })
+  $('flash').style.background = 'radial-gradient(600px 380px at 50% 230px, rgba(59,232,224,.45), transparent 70%)'
+  $('flash').style.opacity = Math.max(0, 1 - Math.abs(t - .95) / .4) * .7
+  const wd = $('word'); wd.style.top = '330px'; wd.style.fontSize = '96px'
+  wordmark(WM, t, .75, [8.7, 9.9])
+  const tg = $('tag'); tg.style.top = '448px'; tg.style.fontSize = '30px'; fadeEl(tg, t, 1.15, 9.9, .5, 1.2, { y: 14, blur: 8 })
+  $('oBuilt').style.top = '548px'
+  fadeEl($('oBuiltK'), t, 1.7, 9.9, .4, 1.2, { y: 6, blur: 4 })
+  OB.forEach((c, i) => fadeEl(c, t, 1.85 + i * .09, 9.9, .5, 1.2, { y: 18, blur: 8 }))
+  $('o3').style.top = '690px'
+  O3.forEach((c, i) => fadeEl(c, t, 2.6 + i * .12, 9.9, .5, 1.2, { y: 14, blur: 10 }))
+  ;['t1', 't2', 't3', 'q1', 'q2', 'q1l', 'q2l'].forEach((id, i) => fadeEl($(id), t, 3.4 + i * .1, 9.9, .55, 1.2, { y: 20, blur: 8 }))
+  $('foot').textContent = 'Prototype on simulated readings  ·  screening support, not a diagnosis  ·  Future Health Digital Innovation Challenge 2026, Challenge 01'
+  $('foot').style.top = '1000px'; $('foot').style.fontSize = '14px'
+  fadeEl($('foot'), t, 4.2, 9.9, .6, 1.2, { y: 0, blur: 4 })
+}
+
+window.render = t => {
+  if (PART === 'intro') intro(t); else outro(t)
+  grain(t)
+}
+window.DURATION = PART === 'intro' ? 14 : 10
+if (PART === 'outro') { $('intro').style.display = 'none'; $('outro').style.display = '' }
+window.ready = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.decode().catch(() => 0))])
+render(0)
+</script>
+</body>

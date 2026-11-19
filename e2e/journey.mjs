@@ -44,7 +44,7 @@ const tab = async label => { await app.evaluate(l => { [...document.querySelecto
 await step('1. Onboarding, then start anonymously', async () => {
   await app.goto(`${BASE}/app?fresh=1`, { waitUntil: 'networkidle0' })
   await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Start anonymously')
-  if (!(await has(app, 'Good evening'))) throw new Error('home not shown')
+  if (!(await has(app, 'Your pathway'))) throw new Error('home not shown')
 })
 await step('2. Private check-in, 13 questions with the conditional one', async () => {
   await tab('Check-in')
@@ -53,11 +53,11 @@ await step('2. Private check-in, 13 questions with the conditional one', async (
   if (!(await has(app, 'answers saved on this phone only'))) throw new Error('check-in not completed')
 })
 await step('3. Pair the Clip and read a simulated week (heat + pattern)', async () => {
-  await tab('Clip'); await click(app, 'Use the demo Clip')
+  await tab('Clip'); await click(app, 'Preview with a sample stream')
   await app.waitForSelector('.seg', { timeout: 8000 })
   await click(app, 'Heat + pattern'); await click(app, 'Fast-forward 7 days')
   await text(app, 'Heat load', 8000)
-  const flags = await app.$$eval('.sig', els => els.filter(e => e.getAttribute('style')?.includes('box-shadow')).length)
+  const flags = await app.$$eval('.sig', els => els.filter(e => e.classList.contains('flag')).length)
   if (flags < 2) throw new Error(`expected 2 flagged signals, got ${flags}`)
 })
 let tiers = []
@@ -81,7 +81,7 @@ await step('6. Send the case for clinician review', async () => {
 const console_ = await ctx.newPage()
 await console_.setViewport({ width: 1440, height: 900 })
 await step('7. The case appears LIVE in the clinician console', async () => {
-  await console_.goto(`${BASE}/clinic`, { waitUntil: 'networkidle0' })
+  await console_.goto(`${BASE}/clinic/queue?notour=1`, { waitUntil: 'networkidle0' })
   await text(console_, code, 8000); await text(console_, 'LIVE')
   await console_.screenshot({ path: `${OUT}/console-live.png` })
 })
@@ -105,7 +105,7 @@ await step('10. Pod: order, collect, courier, then the lab result returns', asyn
   await app.screenshot({ path: `${OUT}/app-care.png`, fullPage: false })
 })
 await step('11. Home shows the booking and the result', async () => {
-  await tab('Home'); await text(app, 'Upcoming'); await text(app, 'View result')
+  await tab('Today'); await text(app, 'Upcoming'); await text(app, 'Lab result ready')
 })
 await step('12. Arabic: right-to-left layout', async () => {
   await app.evaluate(() => [...document.querySelectorAll('.m-lang')][0].click()); await sleep(600)
@@ -117,7 +117,7 @@ await step('13. Vault: one-time link, audit log, delete everything', async () =>
   await tab('Vault'); await click(app, 'Create a one-time link'); await text(app, '/s/')
   await text(app, 'Booked Andrology')
   await click(app, 'Delete everything'); await click(app, 'Delete')
-  await text(app, 'Nobody needs to know')
+  await text(app, 'No name. No account.')
 })
 await step('14. Red flag interrupts instantly (fresh profile)', async () => {
   await app.goto(`${BASE}/app?fresh=1`, { waitUntil: 'networkidle0' })

@@ -1,11 +1,14 @@
 """Cut the raw screen recording into the demo: per-scene speed-ups, one jump cut, H.264 1080p."""
-import json, subprocess
+import json, os, subprocess
 marks = json.load(open('marks.json'))
 K = 243.12 / 209.9  # the screencast timeline runs this much slower than wall-clock
 end_total = 209.9
 bounds = {m['scene']: m['at'] for m in marks}
 names = [m['scene'] for m in marks]
 speed = {'site': 1.3, 'onboard': 1.2, 'checkin': 1.7, 'clip': 1.2, 'care': 1.0, 'review': 1.1, 'book': 1.0, 'pod': 1.35, 'arabic': 1.0, 'vault': 1.2, 'redflag': 1.15, 'bench': 1.15}
+SCALE = float(os.environ.get('SCALE', '1'))  # global speed-up to fit the 3-minute cap with titles
+speed = {k: v * (SCALE if k != 'care' else 1 + (SCALE - 1) * .5) for k, v in speed.items()}
+OUT = os.environ.get('OUT', 'Alarzah_Demo_core.mp4')
 segs = []
 for i, n in enumerate(names):
     a = bounds[n]; b = bounds[names[i + 1]] if i + 1 < len(names) else end_total
@@ -20,5 +23,5 @@ fc = ';'.join(parts) + ';' + ''.join(labels) + f'concat=n={len(labels)}:v=1:a=0[
 est = sum((b - a) / sp for a, b, sp in segs)
 print('segments', len(segs), 'estimated', round(est, 1), 's')
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', 'raw.webm', '-filter_complex', fc, '-map', '[out]', '-c:v', 'libx264', '-preset', 'slow', '-crf', '19',
-                '-pix_fmt', 'yuv420p', '-movflags', '+faststart', 'Alarzah_Demo_core.mp4'], check=True)
+                '-pix_fmt', 'yuv420p', '-movflags', '+faststart', OUT], check=True)
 print('ok')
