@@ -41,9 +41,9 @@ async function answer(label) {
 }
 const tab = async label => { await app.evaluate(l => { [...document.querySelectorAll('.m-tab')].find(b => b.textContent.includes(l))?.click() }, label); await sleep(600) }
 
-await step('1. Onboarding, then start anonymously', async () => {
+await step('1. Welcome, continue as guest, how-it-works guide', async () => {
   await app.goto(`${BASE}/app?fresh=1`, { waitUntil: 'networkidle0' })
-  await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Start anonymously')
+  await click(app, 'Continue as guest', 9000); await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Start my check-in')
   if (!(await has(app, 'Your pathway'))) throw new Error('home not shown')
 })
 await step('2. Private check-in, 13 questions with the conditional one', async () => {
@@ -81,7 +81,7 @@ await step('6. Send the case for clinician review', async () => {
 const console_ = await ctx.newPage()
 await console_.setViewport({ width: 1440, height: 900 })
 await step('7. The case appears LIVE in the clinician console', async () => {
-  await console_.goto(`${BASE}/clinic/queue?notour=1`, { waitUntil: 'networkidle0' })
+  await console_.goto(`${BASE}/clinic/queue?notour=1&guest=1`, { waitUntil: 'networkidle0' })
   await text(console_, code, 8000); await text(console_, 'LIVE')
   await console_.screenshot({ path: `${OUT}/console-live.png` })
 })
@@ -117,17 +117,27 @@ await step('13. Vault: one-time link, audit log, delete everything', async () =>
   await tab('Vault'); await click(app, 'Create a one-time link'); await text(app, '/s/')
   await text(app, 'Booked Andrology')
   await click(app, 'Delete everything'); await click(app, 'Delete')
-  await text(app, 'No name. No account.')
+  await text(app, 'Continue as guest')
 })
 await step('14. Red flag interrupts instantly (fresh profile)', async () => {
   await app.goto(`${BASE}/app?fresh=1`, { waitUntil: 'networkidle0' })
-  await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Start anonymously')
+  await click(app, 'Continue as guest', 9000); await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Next'); await click(app, 'Start my check-in')
   await tab('Check-in'); await answer('Yes')
   await text(app, 'Go to an emergency department now'); await text(app, 'Call 998')
 })
 await step('15. Clinician test suite runs live: 30/30', async () => {
-  await console_.goto(`${BASE}/clinic/benchmark`, { waitUntil: 'networkidle0' })
+  await console_.goto(`${BASE}/clinic/benchmark?guest=1`, { waitUntil: 'networkidle0' })
   await text(console_, '30/30'); await text(console_, '8/8')
+})
+await step('16. Demo account: patient signs in; clinician sees his record from the database', async () => {
+  await app.goto(`${BASE}/app?fresh=1`, { waitUntil: 'networkidle0' })
+  await click(app, 'Omar', 12000)
+  await text(app, 'Your kit', 12000)
+  const c2 = await ctx.newPage(); await c2.setViewport({ width: 1440, height: 900 })
+  await c2.goto(`${BASE}/clinic/patients`, { waitUntil: 'networkidle0' })
+  await click(c2, 'Dr. Mariam', 12000)
+  await text(c2, 'Patient record', 15000); await text(c2, 'Access log')
+  await c2.close()
 })
 
 await browser.close()

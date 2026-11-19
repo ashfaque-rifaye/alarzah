@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
+    "@libsql/client": "^0.14.0",
     "@react-three/drei": "^9.117.3",
     "@react-three/fiber": "^8.17.10",
     "@react-three/postprocessing": "^2.16.3",

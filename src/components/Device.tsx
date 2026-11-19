@@ -62,7 +62,7 @@ export function StepIcon({ k }: { k: string }) {
 
 /** Exploded view of the Clip. `open` is 0 (assembled) … 1 (exploded); pass a MotionValue to drive it by scroll. */
 export function ClipExploded({ open = 1, labels = true, width = '100%' }: { open?: number; labels?: boolean; width?: number | string }) {
-  const W = labels ? 440 : 240, cx = 112
+  const W = labels ? 470 : 240, cx = 112
   // layer: assembled y, exploded y
   const L = [
     { id: 'shell', a: 70, e: 22 }, { id: 'amb', a: 70, e: 22 },
@@ -73,15 +73,22 @@ export function ClipExploded({ open = 1, labels = true, width = '100%' }: { open
   ]
   const yOf = (id: string) => { const l = L.find(x => x.id === id)!; return l.a + (l.e - l.a) * open }
   const ys = { shell: yOf('shell'), mcu: yOf('mcu'), battery: yOf('battery'), base: yOf('base'), pads: yOf('pads') }
-  const lab = (y: number, part: (typeof CLIP_PARTS)[number], k: number) => labels && (
-    <g key={part.id} opacity={Math.min(1, open * 1.4)}>
-      <line x1={cx + 102} x2={262} y1={y} y2={y} stroke={part.color} strokeOpacity=".55" strokeDasharray="2 3" />
-      <circle cx={cx + 102} cy={y} r="2.4" fill={part.color} />
-      <text x={268} y={y - 3} fill="#eaf2f4" fontSize="14" fontWeight="600" fontFamily="var(--display)">{part.name}</text>
-      <text x={268} y={y + 12} fill="#8fa3ad" fontSize="10.5" fontFamily="ui-monospace, Consolas, monospace">{part.part.replace('Medical-grade ', '')}</text>
-      <title>{k}</title>
-    </g>
-  )
+  const SLOT: Record<string, number> = { shell: 20, amb: 66, mcu: 112, imu: 158, battery: 206, pads: 314 }
+  const lab = (y: number, part: (typeof CLIP_PARTS)[number], k: number) => {
+    if (!labels) return null
+    const ly = SLOT[part.id], x0 = cx + 100
+    return (
+      <g key={part.id} opacity={Math.min(1, 0.25 + open * 1.2)}>
+        <path d={`M${x0} ${y} L${236} ${y} L${252} ${ly} L${262} ${ly}`} fill="none" stroke="rgba(234,242,244,.28)" strokeWidth="1" />
+        <circle cx={x0} cy={y} r="2.6" fill={part.color} />
+        <circle cx={x0} cy={y} r="6" fill={part.color} opacity=".18" />
+        <text x={270} y={ly - 4} fill="#eaf2f4" fontSize="13.5" fontWeight="600" fontFamily="Inter, system-ui, sans-serif" letterSpacing="-.01em">
+          <tspan fill="#5c6f78" fontSize="10" fontWeight="500" fontFamily="ui-monospace, Consolas, monospace">{String(k + 1).padStart(2, '0')}  </tspan>{part.name}
+        </text>
+        <text x={270} y={ly + 12} fill="#8fa3ad" fontSize="11" fontFamily="Inter, system-ui, sans-serif">{part.part.replace('Medical-grade ', '')}</text>
+      </g>
+    )
+  }
   const P = (id: string) => CLIP_PARTS.find(p => p.id === id)!
   return (
     <svg viewBox={`0 0 ${W} 370`} style={{ width, height: 'auto', display: 'block', overflow: 'visible' }} role="img" aria-label="Exploded view of the Alarzah Clip: silicone shell with room sensor, Bluetooth board with posture sensor, coin cell, inner shell, and two skin temperature sensors">
@@ -142,9 +149,9 @@ export function ClipExploded({ open = 1, labels = true, width = '100%' }: { open
       </g>
 
       {labels && <>
-        {lab(yOf('shell') - 10, P('shell'), 0)}{lab(yOf('shell') + 28, P('amb'), 1)}
-        {lab(yOf('mcu') - 8, P('mcu'), 2)}{lab(yOf('mcu') + 28, P('imu'), 3)}
-        {lab(yOf('battery'), P('battery'), 4)}{lab(yOf('pads'), P('pads'), 5)}
+        {lab(yOf('shell') - 8, P('shell'), 0)}{lab(yOf('shell') + 6, P('amb'), 1)}
+        {lab(yOf('mcu') - 6, P('mcu'), 2)}{lab(yOf('mcu') + 6, P('imu'), 3)}
+        {lab(yOf('battery'), P('battery'), 4)}{lab(yOf('pads') + 2, P('pads'), 5)}
       </>}
     </svg>
   )

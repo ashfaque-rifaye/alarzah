@@ -14,6 +14,9 @@ import { Checkin, EMPTY_CHECKIN, SEMEN_REF, SemenResult, TIER_META, TierId, tria
 import { readReviews, sendCase, subscribe } from '../engine/sync'
 import { heatAdvice, useClipLink, useMotion, useWeather } from '../engine/live'
 import { Lang, QUESTIONS, STRINGS, Strings, TTC_OPTIONS } from '../i18n'
+import { Avatar, AuthResult, Guide, ProfileSheet, saveRemote, Welcome } from './AppAuth'
+import { call, getSession, setSession, signOut } from '../engine/account'
+import type { PatientProfile } from '../engine/profiles'
 import './mobile.css'
 
 type Tab = 'home' | 'check' | 'clip' | 'care' | 'vault'
@@ -37,6 +40,11 @@ interface State {
   lab?: SemenResult & { at: number }
   bookings: Booking[]
   anonId: string
+  account?: { id: string; name: string; email: string; demo: boolean }
+  profile?: PatientProfile
+  guest?: boolean
+  demoProfile?: string
+  syncedAt?: number
 }
 interface Booking { tier: TierId; place: string; slot: string; ref: string; at: number }
 const KEY = 'alarzah.v1'
@@ -49,7 +57,7 @@ const params = new URLSearchParams(location.search)
 /** ?demo=1 preloads a filled-in journey (for the demo video and screenshots); ?tab=, ?kind=, ?lang=ar, ?pod= adjust it. */
 function demoState(): State {
   return {
-    ...fresh(), lang: (params.get('lang') as Lang) || 'en', onboarded: true, anonId: 'K7Q2',
+    ...fresh(), lang: (params.get('lang') as Lang) || 'en', onboarded: true, anonId: 'K7Q2', guest: true,
     answers: { pain: false, lump: false, ttc: '6to12', partner35: false, steroids: true, udt: false, pastTesticular: false, heatJob: true, smoke: false, metabolic: false, infection: false, erection: false, noSpermBefore: false },
     checkDone: params.get('check') !== '0', paired: params.get('paired') !== '0', weekDone: params.get('week') !== '0', clipKind: (params.get('kind') as Kind) || 'both',
     pod: (params.get('pod') as PodState) || 'collected', collectedAt: Date.now() - 754000, reviewedAt: params.get('reviewed') === '0' ? undefined : Date.now(),
@@ -69,7 +77,15 @@ function demoState(): State {
 function load(): State {
   if (params.get('demo')) return demoState()
   if (params.get('fresh')) return { ...fresh(), lang: (params.get('lang') as Lang) || 'en' }
-  try { const s = localStorage.getItem(KEY); if (s) return { ...fresh(), ...JSON.parse(s) } } catch { /* storage blocked */ }
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw) {
+      const st: State = { ...fresh(), ...JSON.parse(raw) }
+      if (st.account && !getSession('patient')) return fresh() // signed out elsewhere
+      if (st.onboarded && !st.account) st.guest = true // profiles from before accounts existed
+      return st
+    }
+  } catch { /* storage blocked */ }
   return fresh()
 }
 
@@ -92,7 +108,7 @@ const caseCode = (s: State) => `ALZ-${s.anonId}`
 const previewKind = (k: Kind) => (k === 'heat' || k === 'asymmetry' || k === 'both' ? k : 'typical')
 
 type Live = { weather: ReturnType<typeof useWeather>; motion: ReturnType<typeof useMotion>; link: ReturnType<typeof useClipLink> }
-const Ctx = createContext<{ s: State; set: (p: Partial<State>) => void; t: Strings; log: (w: string) => void; go: (t: Tab) => void; reset: () => void; notify: (m: string) => void; live: Live }>(null!)
+const Ctx = createContext<{ s: State; set: (p: Partial<State>) => void; t: Strings; log: (w: string) => void; go: (t: Tab) => void; reset: () => void; notify: (m: string) => void; live: Live; openProfile: () => void }>(null!)
 const useApp = () => useContext(Ctx)
 
 const spring = { type: 'spring', stiffness: 380, damping: 32 } as const
@@ -152,6 +168,48 @@ export default function MobileApp() {
     }, 7000)
     return () => clearTimeout(id)
   }, [s.pod, s.lab])
+  /* account: back up the record (debounced) and pick up clinician reviews from the server */
+  useEffect(() => {
+    if (!s.account || params.get('demo')) return
+    const id = setTimeout(() => {
+      const { account, profile, syncedAt, ...state } = s
+      saveRemote(state, profile).then(r => setS(o => ({ ...o, syncedAt: r.savedAt }))).catch(() => {})
+    }, 1200)
+    return () => clearTimeout(id)
+  }, [s.account?.id, s.answers, s.checkDone, s.paired, s.weekDone, s.pod, s.lab, s.bookings, s.sharedAt, s.reviewedAt, s.onboarded, s.lang, s.profile])
+  useEffect(() => {
+    if (!s.account || !s.sharedAt) return
+    const poll = () => call<{ cases: { status: string; reviewed_at?: number; reviewed_by?: string; decision?: string; note?: string; sent_at: number }[] }>('me', {}, 'patient').then(b => {
+      const k = b.cases[0]
+      if (k?.status === 'reviewed' && k.reviewed_at && k.reviewed_at > (s.reviewedAt ?? 0)) {
+        setS(o => ({ ...o, reviewedAt: k.reviewed_at, reviewNote: k.note ?? o.reviewNote, audit: [{ at: Date.now(), what: `Clinician ${k.reviewed_by} ${k.decision} your referral` }, ...o.audit] }))
+        notify(`${k.reviewed_by} reviewed your referral`)
+      }
+    }).catch(() => {})
+    poll(); const id = setInterval(poll, 6000)
+    return () => clearInterval(id)
+  }, [s.account?.id, s.sharedAt, s.reviewedAt])
+  const [profileOpen, setProfileOpen] = useState(false)
+  const onAuth = (r: AuthResult) => {
+    if (r.kind === 'guest') { setS(o => ({ ...o, guest: true, lang: r.lang, audit: [{ at: Date.now(), what: 'Started as a guest (stored on this phone only)' }, ...o.audit] })); return }
+    const b = r.bundle
+    setS({ ...fresh(), ...(b.state as Partial<State>), account: { id: b.user.id, name: b.user.name, email: b.user.email, demo: b.user.demo }, profile: b.profile ?? undefined, guest: false, lang: (b.state.lang as Lang) || (b.profile?.lang as Lang) || 'en' })
+    setTab('home')
+  }
+  const signOutAll = async () => {
+    setProfileOpen(false)
+    if (s.account) await signOut('patient')
+    try { localStorage.removeItem(KEY) } catch { /* ignore */ }
+    link.disconnect(); setS(fresh()); setTab('home')
+  }
+  const records = [
+    { label: 'Check-in', value: s.checkDone ? 'Completed' : 'Not yet' },
+    { label: 'Clip week', value: s.weekDone ? `Analysed · ${KIND_LABEL[s.clipKind]}` : s.paired ? 'Wearing' : 'Not started' },
+    { label: 'Clinician review', value: s.reviewedAt ? `Approved ${new Date(s.reviewedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : s.sharedAt ? 'Waiting' : 'Not sent', tone: s.reviewedAt ? 'var(--mint)' : undefined },
+    { label: 'Appointments', value: s.bookings.length ? s.bookings.map(b => b.slot).join(', ') : 'None' },
+    { label: 'Lab result', value: s.lab ? new Date(s.lab.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : s.pod !== 'none' ? `Pod ${s.pod}` : 'None' },
+    { label: 'Case code', value: caseCode(s) },
+  ]
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }) }, [tab])
   const live = useMemo(() => ({ weather, motion: motionS, link }), [weather, motionS, link])
@@ -160,8 +218,12 @@ export default function MobileApp() {
     set: (p: Partial<State>) => setS(o => ({ ...o, ...p })),
     log: (what: string) => setS(o => ({ ...o, audit: [{ at: Date.now(), what }, ...o.audit].slice(0, 40) })),
     go: (t: Tab) => setTab(t),
-    reset: () => { try { localStorage.removeItem(KEY) } catch { /* ignore */ } link.disconnect(); setS(fresh()); setTab('home') },
+    reset: async () => {
+      if (s.account) { try { await call('deleteAccount', {}, 'patient') } catch { /* offline */ } setSession('patient', null) }
+      try { localStorage.removeItem(KEY) } catch { /* ignore */ } link.disconnect(); setS(fresh()); setTab('home')
+    },
     notify,
+    openProfile: () => setProfileOpen(true),
   }), [s, live])
 
   const app = (
@@ -191,7 +253,11 @@ export default function MobileApp() {
           ))}
         </nav>
         <AnimatePresence>{toast && <motion.div className="m-toast" role="status" initial={{ opacity: 0, y: -20, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12 }}><span className="m-toast-dot" />{toast}</motion.div>}</AnimatePresence>
-        <AnimatePresence>{!s.onboarded && <Onboarding />}</AnimatePresence>
+        <AnimatePresence>{!s.account && !s.guest && <Welcome key="welcome" lang={s.lang} setLang={l => setS(o => ({ ...o, lang: l }))} onDone={onAuth} />}</AnimatePresence>
+        <AnimatePresence>{(s.account || s.guest) && !s.onboarded && <Guide key="guide" name={s.profile?.alias} onFinish={() => { setS(o => ({ ...o, onboarded: true, audit: [{ at: Date.now(), what: 'Finished the how-it-works guide' }, ...o.audit] })); setTab('check') }} />}</AnimatePresence>
+        <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} account={s.account} profile={s.profile} records={records} synced={s.syncedAt}
+          onSave={p => setS(o => ({ ...o, profile: { ...(o.profile ?? { alias: o.account?.name ?? 'Guest', ageBand: '25–34', lang: o.lang, group: 'Other', education: 'University', emirate: 'Abu Dhabi', consent: { backup: true, shareWithCareTeam: false, research: false }, avatar: 'sky' }), ...p } as PatientProfile }))}
+          onSignOut={signOutAll} onCreateAccount={signOutAll} />
       </div>
     </Ctx.Provider>
   )
@@ -322,15 +388,18 @@ const LadderArt = () => (
 
 /* ---------- shared bits ---------- */
 function Header({ title, sub, kicker }: { title: string; sub?: string; kicker?: string }) {
-  const { s, set, t } = useApp()
+  const { s, set, t, openProfile } = useApp()
   return (
     <>
       <div className="m-top">
         <div className="m-id"><span className="m-id-code mono">ALZ-{s.anonId}</span><span className="m-id-safe">{I.lock}{t.onDevice}</span></div>
-        <button className="m-lang" onClick={() => set({ lang: s.lang === 'en' ? 'ar' : 'en' })} aria-label={t.lang}>{s.lang === 'en' ? 'ع' : 'EN'}</button>
+        <div className="m-row" style={{ gap: 8 }}>
+          <button className="m-lang" onClick={() => set({ lang: s.lang === 'en' ? 'ar' : 'en' })} aria-label={t.lang}>{s.lang === 'en' ? 'ع' : 'EN'}</button>
+          <button className="m-avatar-btn" onClick={openProfile} aria-label="Your profile"><Avatar name={s.profile?.alias || s.account?.name || 'Guest'} tone={s.profile?.avatar ?? 'sky'} size={36} /></button>
+        </div>
       </div>
       {kicker && <div className="m-kicker">{kicker}</div>}
-      <h1 className="m-h1">{title}</h1>
+      {title && <h1 className="m-h1">{title}</h1>}
       {sub && <p className="muted" style={{ margin: '0 0 16px', fontSize: 14 }}>{sub}</p>}
     </>
   )
@@ -386,7 +455,9 @@ function Today() {
   const L = link.latest?.left, R = link.latest?.right
   return (
     <>
-      <Header kicker={now.toLocaleDateString(s.lang === 'ar' ? 'ar-AE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} title={t.today} />
+      <Header kicker={now.toLocaleDateString(s.lang === 'ar' ? 'ar-AE' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} title="" />
+      <h1 className="m-greet">{s.lang === 'ar' ? 'مرحبًا،' : 'Hi,'} <span className="thermal-text">{s.profile?.alias || s.account?.name || (s.lang === 'ar' ? 'بك' : 'there')}.</span></h1>
+      <p className="m-greet-sub">{cur >= 5 ? 'Your pathway is complete. Re-test in 6 weeks.' : `${Math.min(cur, 5)} of 5 steps done · next: ${steps[cur].k.toLowerCase()}`}</p>
       <section className={`hero ${on ? 'hero-on' : ''}`}>
         <IsoField heat={on && L ? Math.min(1, Math.max(0, (L - 33) / 3)) : heat} />
         <div className="hero-shade" />
@@ -410,9 +481,14 @@ function Today() {
       </section>
       {adv && <div className={`advice advice-${adv.level}`}><span>{I.sun}</span><div><b>{adv.title}</b><div>{adv.body}</div></div></div>}
 
-      <section className="card path">
-        <div className="m-between"><div className="m-kicker">{t.pathway}</div><span className="mono dim" style={{ fontSize: 11 }}>{Math.min(cur, 5)}/5</span></div>
-        <div className="path-track">{steps.map((x, k) => <div key={x.k} className={`path-seg ${x.done ? 'done' : k === cur ? 'cur' : ''}`}><i /><span>{x.k}</span></div>)}</div>
+      <section className="card path kit">
+        <div className="m-between"><div><div className="kit-title">Your kit</div><div className="kit-sub">{t.pathway}</div></div><span className="kit-count"><b>{Math.min(cur, 5)}</b> of 5</span></div>
+        <div className="kit-tubes">{steps.map((x, k) => (
+          <button key={x.k} className={`kit-tube ${x.done ? 'done' : k === cur ? 'cur' : ''}`} onClick={() => go(x.tab)}>
+            <span className="kit-glass"><motion.i initial={{ height: 0 }} animate={{ height: x.done ? '100%' : k === cur ? '34%' : '0%' }} transition={{ delay: 0.1 + k * 0.08, type: 'spring', stiffness: 90, damping: 16 }} /></span>
+            <span className="kit-l">{x.k}</span>
+          </button>))}
+        </div>
         {cur < 5 ? (
           <button className="path-next" onClick={() => go(steps[cur].tab)}>
             <div><b>{['Start your private check-in', 'Wear the Clip', 'Send for clinician review', 'Book your appointment', 'Do the home test'][cur]}</b><div className="muted">{NEXT_COPY[cur]}</div></div>{I.arrow}
@@ -761,6 +837,7 @@ function Care() {
   if (!s.checkDone) return (<><Header kicker="Steps 3–5" title={t.care} /><section className="card"><p style={{ marginTop: 0 }}>Finish the private check-in first. It decides which steps you see here.</p><button className="btn btn-primary" onClick={() => go('check')}>{t.startCheck}</button></section></>)
   const send = () => {
     sendCase({ code: caseCode(s), sentAt: Date.now(), lang: s.lang, checkin: toCheckin(s.answers), clipKind: s.paired && s.weekDone ? s.clipKind : undefined, lab: s.lab ? { volume: s.lab.volume, concentration: s.lab.concentration, totalMotility: s.lab.totalMotility, progressive: s.lab.progressive, morphology: s.lab.morphology } : undefined })
+    if (s.account) call('sendCase', { case: { code: caseCode(s), sentAt: Date.now(), lang: s.lang, checkin: toCheckin(s.answers), clipKind: s.paired && s.weekDone ? s.clipKind : undefined, lab: s.lab } }, 'patient').catch(() => notify('Saved on this phone; will send when online'))
     set({ sharedAt: Date.now(), reviewedAt: undefined })
     log(`Summary sent to the clinician queue as ${caseCode(s)} (with consent)`)
     notify('Sent to the clinician queue')

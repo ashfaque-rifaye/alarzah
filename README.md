@@ -14,6 +14,16 @@ Future Health Digital Innovation Challenge 2026 · Fertility · **Challenge 01: 
 
 ---
 
+### Sign in (template slide 11)
+
+| Who | How |
+|---|---|
+| Man (app) | **Continue as guest** (nothing leaves the phone), **create an account**, or tap a **demo profile** on the welcome screen |
+| Demo patients | `omar@demo.alarzah`, `rahul@demo.alarzah`, `khalid@demo.alarzah`, `faisal@demo.alarzah`, `james@demo.alarzah` · password `alarzah-demo` (reset to their starting story on each sign-in) |
+| Clinician (console) | `mariam@demo.alarzah` or `coordinator@demo.alarzah` · password `alarzah-demo`, one-tap demo buttons, or **Continue as guest** for the sample cohort |
+
+Accounts, patient records, cases, reviews and an access log live in **Turso (libSQL)** via `api/account.ts`. A clinician sees a man's record only after he sends a case or turns on "let my care team see my record"; every view is logged and shown to him. Turning off backup removes his health record from the server. Passwords are hashed with scrypt; sessions are random 30-day tokens.
+
 ## 1. What it does
 
 1. **Check-in** (app): 13 questions, Arabic or English, typed or spoken. Anonymous code, no name. Red flags (sudden pain, a new lump) interrupt at once.
@@ -46,7 +56,7 @@ Future Health Digital Innovation Challenge 2026 · Fertility · **Challenge 01: 
 | Live inputs | `src/engine/live.ts` | Open-Meteo weather, phone motion (posture), Web Bluetooth Health Thermometer (GATT 0x1809 / 0x2A1C) |
 | Sample data | `src/engine/simulate.ts` | Seeded 7-day traces with known ground truth |
 | Test suite | `src/engine/benchmark.ts`, `engine.test.ts` | 30 triage cases, signal benchmark with Wilson 95% intervals |
-| App ↔ console | `src/engine/sync.ts` | localStorage + BroadcastChannel (same browser only, see limitations) |
+| App ↔ console | `api/account.ts`, `src/engine/account.ts`, `src/engine/sync.ts` | Signed-in: Turso database, works across devices. Guest: localStorage + BroadcastChannel in one browser |
 | Hardware | `src/components/Device.tsx` | Clip and Pod reference design, safety, wear guide |
 
 Stack: React 18 + TypeScript (Vite), Framer Motion, Three.js / React Three Fiber, PWA, Vercel serverless, NVIDIA NIM, Anthropic SDK, Vitest, Puppeteer.
@@ -77,7 +87,7 @@ Stack: React 18 + TypeScript (Vite), Framer Motion, Three.js / React Three Fiber
 | Left/right pattern (60 seeded traces) | sensitivity **72%** (95% CI 49–88%), specificity **100%** (89–100%) |
 | High heat load (60 seeded traces) | sensitivity **88%** (64–97%), specificity **100%** (89–100%) |
 | Unit tests (Vitest) | **21 / 21 pass** |
-| End-to-end journey (Puppeteer, `node e2e/journey.mjs <url>`) | **15 / 15 steps** |
+| End-to-end journey (Puppeteer, `node e2e/journey.mjs <url>`) | **16 / 16 steps** (incl. demo sign-in and a clinician opening the record from the database) |
 
 The left/right rule misses about 1 in 4 sample patterns. We chose specificity over sensitivity on purpose (a false referral costs a clinic slot and worry), and the threshold is to be recalibrated against ultrasound in the pilot.
 
@@ -151,7 +161,7 @@ No data was provided by the organisers and none is needed. No real patient data 
 
 **Limitations (stated plainly)**
 - **The Clip and Pod are not built.** They are a reference design: parts specified, bench validation in pilot weeks 0–8. Skin readings in the demo are sample data, labelled as such.
-- The app ↔ console link works only within one browser (localStorage). Production needs a consented API and Malaffi / Sahatna integration.
+- Guest mode links app and console only within one browser; signed-in accounts sync through the database across devices. The database region is Mumbai (ap-south-1); a UAE region and Malaffi / Sahatna integration are needed for a pilot.
 - The left/right rule has 72% sensitivity on sample data; it is not validated on real men.
 - All imagery in the deck and video is AI-generated and disclosed.
 

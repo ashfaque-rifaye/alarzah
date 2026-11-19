@@ -262,3 +262,31 @@
 .m-toast { position: absolute; left: 16px; right: 16px; top: 58px; z-index: 95; display: flex; gap: 10px; align-items: center; padding: 13px 16px; border-radius: 18px; background: rgba(14,24,30,.92); border: 1px solid rgba(124,245,184,.4); backdrop-filter: blur(18px); font-size: 14px; box-shadow: 0 20px 40px -12px rgba(0,0,0,.7); }
 .m-full .m-toast { top: max(14px, env(safe-area-inset-top)); }
 .m-toast-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 12px var(--mint); flex: none; }
+/* ---------- Today: greeting + kit (Siperti-inspired) ---------- */
+.m-greet { font: 600 38px/1.02 var(--display); letter-spacing: -.045em; margin: 2px 0 6px; }
+[dir='rtl'] .m-greet { font-family: var(--arabic); letter-spacing: 0; }
+.m-greet-sub { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
+.kit { padding: 18px 16px 14px; }
+.kit-title { font: 600 18px var(--display); letter-spacing: -.02em; }
+.kit-sub { font-size: 11.5px; color: var(--dim); margin-top: 1px; }
+.kit-count { font-size: 12.5px; color: var(--muted); padding: 5px 11px; border-radius: 99px; background: rgba(255,255,255,.06); border: 1px solid var(--line); }
+.kit-count b { color: var(--ink); }
+.kit-tubes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0 12px; }
+.kit-tube { display: grid; justify-items: center; gap: 8px; }
+.kit-glass { position: relative; width: 30px; height: 74px; border-radius: 15px; overflow: hidden; background: linear-gradient(90deg, rgba(255,255,255,.1), rgba(255,255,255,.03) 45%, rgba(255,255,255,.08)); border: 1px solid rgba(255,255,255,.14); box-shadow: inset 0 0 0 2px rgba(0,0,0,.25); }
+.kit-glass::after { content: ''; position: absolute; left: 6px; top: 6px; bottom: 10px; width: 4px; border-radius: 4px; background: linear-gradient(180deg, rgba(255,255,255,.45), transparent); }
+.kit-glass i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, #7cf5b8, #3be8e0); box-shadow: 0 0 18px rgba(59,232,224,.6); }
+.kit-tube.cur .kit-glass { border-color: rgba(255,193,94,.55); }
+.kit-tube.cur .kit-glass i { background: linear-gradient(180deg, #ffc15e, #ff8a3d); box-shadow: 0 0 18px rgba(255,193,94,.6); }
+.kit-l { font-size: 10.5px; color: var(--dim); text-align: center; line-height: 1.2; }
+.kit-tube.done .kit-l { color: var(--muted); }
+.kit-tube.cur .kit-l { color: var(--warm); font-weight: 600; }
+
+/* ---------- tab bar: floating liquid-glass capsule ---------- */
+.m-tabs { left: 14px; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); height: 66px; border-radius: 33px; padding: 0 6px; background: linear-gradient(180deg, rgba(30,40,46,.62), rgba(10,15,19,.72)); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(30px) saturate(190%); -webkit-backdrop-filter: blur(30px) saturate(190%); box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 -1px 0 rgba(0,0,0,.3), 0 18px 40px -12px rgba(0,0,0,.75); }
+.m-tab { height: 54px; border-radius: 27px; font-size: 10px; font-weight: 500; color: rgba(234,242,244,.48); transition: color .25s; }
+.m-tab svg { width: 23px; height: 23px; }
+.m-tab-glow { border-radius: 27px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+.m-tab-glow::after { display: none; }
+.m-tab.active { color: #fff; }
+.m-tab.active svg { color: var(--cool); filter: drop-shadow(0 0 8px rgba(59,232,224,.5)); }

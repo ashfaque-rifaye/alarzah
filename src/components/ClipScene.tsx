@@ -53,7 +53,7 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
     <group ref={root} scale={1.12}>
       <group ref={top}>
         <RoundedBox args={[1.9, 0.18, 0.34]} radius={0.08} smoothness={6} material={glass} />
-        {label(0, 'Washable shell', 'medical silicone · no camera, no mic', [1.45, 0.12, 0])}
+        {label(0, 'Silicone shell + SHT40', 'ISO 10993 · IP67 · room reference', [1.45, 0.12, 0])}
       </group>
       <group ref={board}>
         <mesh><boxGeometry args={[1.6, 0.05, 0.26]} /><meshStandardMaterial color="#0a2a26" metalness={0.3} roughness={0.5} /></mesh>
@@ -61,11 +61,11 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
           <mesh key={i} position={[x, 0.05, 0]}><boxGeometry args={[w, 0.05, 0.14]} /><meshStandardMaterial color="#141a1f" metalness={0.8} roughness={0.3} /></mesh>))}
         {Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[-0.7 + i * 0.17, 0.03, 0.11]}><boxGeometry args={[0.08, 0.005, 0.01]} /><meshStandardMaterial color="#e8c26a" metalness={1} roughness={0.25} /></mesh>)}
         <mesh position={[-0.72, 0.06, 0.08]}><sphereGeometry args={[0.03, 16, 16]} /><meshStandardMaterial ref={led} color={C.cool} emissive={C.cool} toneMapped={false} /></mesh>
-        {label(1, 'nRF52840 + motion sensor', 'Bluetooth LE · knows lying from upright', [1.45, 0.05, 0])}
+        {label(1, 'nRF52832 + BMA400', 'Bluetooth LE · lying vs upright', [1.45, 0.05, 0])}
       </group>
       <group ref={batt}>
         <RoundedBox args={[1.2, 0.09, 0.22]} radius={0.04} smoothness={4}><meshStandardMaterial color="#b9c3c9" metalness={0.9} roughness={0.25} /></RoundedBox>
-        {label(2, '200 mAh LiPo', '7 days of 1-minute samples', [1.3, -0.02, 0])}
+        {label(2, 'CR2032 coin cell', '~5 months · no charging on the body', [1.3, -0.02, 0])}
       </group>
       <group ref={base}>
         <RoundedBox args={[1.9, 0.3, 0.34]} radius={0.1} smoothness={6} material={shell} />
@@ -74,7 +74,7 @@ export function Clip({ progress, labels = false }: { progress?: MutableRefObject
         <group key={k} ref={ref}>
           <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.27, 0.27, 0.05, 48]} /><meshStandardMaterial ref={k ? padMatR : padMatL} emissiveIntensity={0.75} roughness={0.35} /></mesh>
           <mesh position={[0, 0.3, -0.04]}><boxGeometry args={[0.05, 0.55, 0.015]} /><meshStandardMaterial color="#c58b3a" metalness={0.8} roughness={0.35} /></mesh>
-          {label(3 + k, k ? 'Right pad · TMP117' : 'Left pad · TMP117', '±0.1 °C skin temperature', [0, -0.55, 0])}
+          {label(3 + k, k ? 'Right · TMP117' : 'Left · TMP117', '±0.1 °C at 32–35 °C skin', [0, -0.55, 0])}
         </group>
       ))}
     </group>

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react'
+import React, { Suspense, lazy, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './styles/global.css'
@@ -8,6 +8,9 @@ const MobileApp = lazy(() => import('./pages/MobileApp'))
 const Console = lazy(() => import('./pages/Console'))
 const Demo = lazy(() => import('./pages/Demo'))
 const Share = lazy(() => import('./pages/Share'))
+
+/** Tells the inline launch screen (index.html) that the first page has rendered. */
+function Ready() { useEffect(() => { (window as any).__splashDone?.() }, []); return null }
 
 function Loader() {
   return <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', color: 'var(--muted)' }}>
@@ -29,6 +32,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/demo.html" element={<Demo />} />
           <Route path="*" element={<Landing />} />
         </Routes>
+        <Ready />
       </Suspense>
     </BrowserRouter>
   </React.StrictMode>

@@ -1,3 +1,4 @@
+import SiteNav from '../components/SiteNav'
 import { motion, MotionValue, useMotionValueEvent, useScroll, useSpring, useTransform } from 'framer-motion'
 import Lenis from 'lenis'
 import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
@@ -77,11 +78,7 @@ export default function Landing() {
   return (
     <div className="grain landing">
       <Cursor />
-      <nav className="l-nav glass">
-        <Link to="/" style={{ display: 'flex', gap: 10, alignItems: 'center' }}><img src="/icon.svg" width={28} height={28} alt="" /><b style={{ fontFamily: 'var(--display)', fontSize: 18 }}>Alarzah</b></Link>
-        <div className="l-links"><a className="nl" href="#problem">Problem</a><a className="nl" href="#inside">The Clip</a><a className="nl" href="#hardware">Hardware</a><a className="nl" href="#signals">Signals + AI</a><a className="nl" href="#product">Product</a><a className="nl" href="#honest">Limits</a></div>
-        <div style={{ display: 'flex', gap: 8 }}><Link className="btn btn-ghost nav-ghost" style={{ padding: '10px 14px', fontSize: 14 }} to="/clinic">Clinician console</Link><Link className="btn btn-primary" style={{ padding: '10px 16px', fontSize: 14 }} to="/app">Open the app</Link></div>
-      </nav>
+      <SiteNav />
 
       <header className="l-hero" ref={heroRef}>
         <div className="l-hero-bg"><Suspense fallback={null}><ThermalField /></Suspense></div>

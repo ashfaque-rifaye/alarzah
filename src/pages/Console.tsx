@@ -7,10 +7,12 @@ import { Kind, rng, simulate } from '../engine/simulate'
 import { Checkin, EMPTY_CHECKIN, TIER_META, TIER_ORDER, triage, Triage } from '../engine/rules'
 import { postReview, readInbox, readReviews, SharedCase, subscribe } from '../engine/sync'
 import { runSignalBench, runTriageSuite } from '../engine/benchmark'
+import { call, getSession, signOut } from '../engine/account'
+import { Av, ClinicLogin, Patients, ServerPatient } from './ConsoleAuth'
 import './console.css'
 import './console-guide.css'
 
-interface Case { live?: boolean; id: string; age: number | string; group: string; lang: 'Arabic' | 'English'; edu: string; submitted: number; checkin: Checkin; trace: Trace; analysis: Analysis; tri: Triage; completed: boolean; daysToEval: number }
+interface Case { live?: boolean; server?: boolean; name?: string; id: string; age: number | string; group: string; lang: 'Arabic' | 'English'; edu: string; submitted: number; checkin: Checkin; trace: Trace; analysis: Analysis; tri: Triage; completed: boolean; daysToEval: number }
 const GROUPS = ['Emirati', 'Arab expatriate', 'South Asian', 'Other']
 const EDU = ['School', 'Diploma', 'University']
 const qs = new URLSearchParams(location.search)
@@ -23,6 +25,20 @@ function fromShared(sc: SharedCase): Case {
   return {
     live: true, id: sc.code, age: '—', group: 'Not shared', lang: sc.lang === 'ar' ? 'Arabic' : 'English', edu: 'Not shared', submitted: sc.sentAt,
     checkin: sc.checkin, trace, analysis, tri: triage(sc.checkin, sc.clipKind ? analysis : undefined, sc.lab), completed: true, daysToEval: 0,
+  }
+}
+
+/** A case stored in Turso, sent from a signed-in man's app (any device). */
+function fromServer(p: ServerPatient): Case {
+  const st = p.state ?? {}
+  const checkin: Checkin = { ...EMPTY_CHECKIN }
+  for (const [k, v] of Object.entries(st.answers ?? {})) (checkin as any)[k] = k === 'ttc' ? (v ?? 'none') : !!v
+  const kind: Kind = st.weekDone ? st.clipKind ?? 'typical' : 'poorWear'
+  const trace = simulate(kind, 11)
+  const analysis = analyse(trace)
+  return {
+    live: true, server: true, name: p.name, id: p.code!, age: p.profile?.ageBand ?? '—', group: p.profile?.group ?? 'Not shared', lang: p.profile?.lang === 'ar' ? 'Arabic' : 'English', edu: p.profile?.education ?? '—',
+    submitted: p.sentAt ?? p.updatedAt, checkin, trace, analysis, tri: triage(checkin, st.weekDone ? analysis : undefined, st.lab), completed: true, daysToEval: 0,
   }
 }
 
@@ -57,13 +73,30 @@ const NAV_ICON: Record<string, JSX.Element> = {
   today: <svg viewBox="0 0 24 24" width="18" height="18" {...ic}><rect x="4" y="5" width="16" height="15" rx="3" /><path d="M4 10h16M9 3v4M15 3v4" /></svg>,
   queue: <svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M5 7h14M5 12h14M5 17h9" /></svg>,
   fairness: <svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M12 4v16M5 8h14M7 8l-3 6a3 3 0 0 0 6 0Zm10 0-3 6a3 3 0 0 0 6 0Z" /></svg>,
+  patients: <svg viewBox="0 0 24 24" width="18" height="18" {...ic}><circle cx="9" cy="8" r="3.2" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.6M18 19a5 5 0 0 0-2.5-4.3" /></svg>,
   benchmark: <svg viewBox="0 0 24 24" width="18" height="18" {...ic}><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3" /></svg>,
 }
 
-type View = 'today' | 'queue' | 'fairness' | 'benchmark'
+type View = 'today' | 'queue' | 'patients' | 'fairness' | 'benchmark'
+const GUEST_KEY = 'alarzah.clinic.guest'
 export default function Console() {
+  const [sess, setSess] = useState(() => getSession('clinician'))
+  const [guest, setGuest] = useState(() => EMBED || qs.has('guest') || (() => { try { return sessionStorage.getItem(GUEST_KEY) === '1' } catch { return false } })())
+  if (!sess && !guest) return <ClinicLogin onDone={() => setSess(getSession('clinician'))} onGuest={() => { try { sessionStorage.setItem(GUEST_KEY, '1') } catch { /* ignore */ } setGuest(true) }} />
+  return <ConsoleApp me={sess?.user.name} onSignOut={async () => { await signOut('clinician'); try { sessionStorage.removeItem(GUEST_KEY) } catch { /* ignore */ } setGuest(false); setSess(null) }} />
+}
+
+function ConsoleApp({ me, onSignOut }: { me?: string; onSignOut: () => void }) {
   const loc = useLocation(), nav = useNavigate()
-  const view: View = loc.pathname.includes('benchmark') ? 'benchmark' : loc.pathname.includes('fairness') ? 'fairness' : loc.pathname.includes('queue') ? 'queue' : 'today'
+  const view: View = loc.pathname.includes('benchmark') ? 'benchmark' : loc.pathname.includes('fairness') ? 'fairness' : loc.pathname.includes('queue') ? 'queue' : loc.pathname.includes('patients') ? 'patients' : 'today'
+  const [patients, setPatients] = useState<ServerPatient[]>([])
+  const [ploading, setPloading] = useState(!!me)
+  useEffect(() => {
+    if (!me) return
+    const load = () => call<{ patients: ServerPatient[] }>('patients', {}, 'clinician').then(r => setPatients(r.patients)).catch(() => {}).finally(() => setPloading(false))
+    load(); const id = setInterval(load, 6000)
+    return () => clearInterval(id)
+  }, [me])
   const base = useMemo(() => cohort(), [])
   const [inbox, setInbox] = useState(readInbox)
   const [flash, setFlash] = useState<string | null>(null)
@@ -74,9 +107,11 @@ export default function Console() {
   }), [])
   useEffect(() => { if (inbox.length) mark('live') }, [inbox.length])
   useEffect(() => { if (view === 'fairness') mark('fairness'); if (view === 'benchmark') mark('bench') }, [view])
-  const cases = useMemo(() => [...inbox.map(fromShared), ...base], [inbox, base])
+  const serverCases = useMemo(() => patients.filter(p => p.code).map(fromServer), [patients])
+  const cases = useMemo(() => [...serverCases.filter(c => c.tri.recommendations.length), ...inbox.map(fromShared).filter(c => !serverCases.some(x => x.id === c.id)), ...base], [serverCases, inbox, base])
   const [sel, setSel] = useState(() => readInbox()[0]?.code ?? base[0].id)
   const [signed, setSigned] = useState<Record<string, 'approved' | 'changed'>>(() => Object.fromEntries(readReviews().map(r => [r.code, r.decision])))
+  useEffect(() => { const rev = Object.fromEntries(patients.filter(p => p.code && p.status === 'reviewed').map(p => [p.code!, 'approved' as const])); if (Object.keys(rev).length) setSigned(o => ({ ...rev, ...o })) }, [patients])
   useEffect(() => { if (Object.keys(signed).length) mark('decided') }, [signed])
   const [tour, setTour] = useState(() => !EMBED && (qs.has('tour') || (!qs.has('notour') && !readProg().tour)) && loc.pathname.includes('queue'))
   useEffect(() => { document.title = 'Alarzah · Clinician console' }, [])
@@ -87,7 +122,7 @@ export default function Console() {
     <div className={`c-shell grain ${EMBED ? 'embed' : ''}`}>
       <aside className="c-rail">
         <Link to="/" className="c-brand"><img src="/icon.svg" width={30} height={30} alt="" /><div><b>Alarzah</b><div className="dim" style={{ fontSize: 11 }}>Clinician console</div></div></Link>
-        {([['today', 'Today', null], ['queue', 'Review queue', waiting.length], ['fairness', 'Fairness', null], ['benchmark', 'Test suite', '30/30']] as const).map(([k, l, b]) => (
+        {([['today', 'Today', null], ['queue', 'Review queue', waiting.length], ['patients', 'Patients', me ? patients.length : null], ['fairness', 'Fairness', null], ['benchmark', 'Test suite', '30/30']] as const).map(([k, l, b]) => (
           <button key={k} className={`c-navi ${view === k ? 'on' : ''}`} onClick={() => go(k)}>
             {view === k && <motion.div layoutId="cnav" className="c-navglow" />}<span className="c-navl">{NAV_ICON[k]}{l}</span>{b != null && <span className={`c-badge ${k === 'queue' && b ? 'hot' : ''}`}>{b}</span>}
           </button>))}
@@ -95,7 +130,8 @@ export default function Console() {
           <div className="c-mini">Your shift</div>
           {[['Open the top case', p.opened], ['Approve or change', p.decided], ['Watch a live case arrive', p.live], ['Check fairness', p.fairness]].map(([l, d]) => <div key={l as string} className={d ? 'done' : ''}><i />{l as string}</div>)}
         </div>
-        <div style={{ marginTop: 'auto' }} className="c-note">Sample cohort for the prototype.<br />Signed in as <b>Dr. Demo</b> (guest)<br /><button className="c-linkbtn" onClick={startTour}>Replay the walkthrough</button></div>
+        <div style={{ marginTop: 'auto' }} className="c-note">{me ? <>Live records from the database, plus a labelled sample cohort.</> : <>Guest mode: sample cohort only. Sign in to see real records.</>}<br /><button className="c-linkbtn" onClick={startTour}>Replay the walkthrough</button></div>
+        {!EMBED && <div className="c-user"><Av name={me ?? 'Guest'} tone={me ? 'mint' : 'sky'} size={32} /><div><b>{me ?? 'Guest clinician'}</b><span>{me ? 'Signed in' : 'Not signed in'}</span></div><button onClick={onSignOut}>{me ? 'Sign out' : 'Sign in'}</button></div>}
         <Link to="/app" className="btn btn-ghost" style={{ fontSize: 13, padding: '10px 12px' }}>Open the man’s app →</Link>
       </aside>
       <main className="c-main">
@@ -103,7 +139,8 @@ export default function Console() {
         <AnimatePresence mode="wait">
           <motion.div key={view} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             {view === 'today' && <Today cases={cases} waiting={waiting} signed={signed} p={p} go={go} open={id => { setSel(id); go('queue') }} startTour={startTour} />}
-            {view === 'queue' && <Queue cases={cases} sel={sel} setSel={id => { setSel(id); mark('opened') }} signed={signed} setSigned={setSigned} onOpen={() => mark('opened')} />}
+            {view === 'queue' && <Queue cases={cases} sel={sel} setSel={id => { setSel(id); mark('opened') }} signed={signed} setSigned={setSigned} onOpen={() => mark('opened')} me={me} />}
+            {view === 'patients' && (me ? <Patients patients={patients} loading={ploading} me={me} openCase={code => { setSel(code); go('queue') }} /> : <div className="glass c-card" style={{ maxWidth: 560 }}><h2>Patients</h2><p className="muted">Patient records live in the database and are only shown to a signed-in clinician. Every view is logged and visible to the man.</p><button className="btn btn-primary" onClick={onSignOut}>Sign in</button></div>)}
             {view === 'fairness' && <Fairness cases={cases} />}
             {view === 'benchmark' && <Bench />}
           </motion.div>
@@ -268,7 +305,7 @@ function Journey({ c, signed }: { c: Case; signed?: string }) {
     </div>
   )
 }
-function Queue({ cases, sel, setSel, signed, setSigned, onOpen }: { cases: Case[]; sel: string; setSel: (s: string) => void; signed: Record<string, 'approved' | 'changed'>; setSigned: (f: (o: Record<string, 'approved' | 'changed'>) => Record<string, 'approved' | 'changed'>) => void; onOpen: () => void }) {
+function Queue({ cases, sel, setSel, signed, setSigned, onOpen, me }: { cases: Case[]; sel: string; setSel: (s: string) => void; signed: Record<string, 'approved' | 'changed'>; setSigned: (f: (o: Record<string, 'approved' | 'changed'>) => Record<string, 'approved' | 'changed'>) => void; onOpen: () => void; me?: string }) {
   const c = cases.find(x => x.id === sel) ?? cases[0]
   const [q, setQ] = useState('')
   useEffect(() => { onOpen() }, [])
@@ -277,7 +314,9 @@ function Queue({ cases, sel, setSel, signed, setSigned, onOpen }: { cases: Case[
   const nextOpen = cases.slice(idx + 1).find(x => !signed[x.id])
   const decide = (d: 'approved' | 'changed') => {
     setSigned(o => ({ ...o, [c.id]: d }))
-    if (c.live) postReview({ code: c.id, decision: d, note: d === 'approved' ? 'Approved. Please book the steps shown; the home test can go ahead.' : 'Changed: please see your family physician first; they will arrange the rest.', at: Date.now(), by: 'Dr. Demo' })
+    const note = d === 'approved' ? 'Approved. Please book the steps shown; the home test can go ahead.' : 'Changed: please see your family physician first; they will arrange the rest.'
+    if (c.server) call('review', { code: c.id, decision: d, note }, 'clinician').catch(() => {})
+    else if (c.live) postReview({ code: c.id, decision: d, note, at: Date.now(), by: me ?? 'Dr. Demo' })
   }
   return (
     <div className="c-queue">
@@ -290,7 +329,7 @@ function Queue({ cases, sel, setSel, signed, setSigned, onOpen }: { cases: Case[
           return (
             <motion.button layout key={x.id} className={`c-item ${x.id === c.id ? 'on' : ''}`} onClick={() => setSel(x.id)}>
               <span className="c-dot" style={{ background: TIER_META[top.tier].color, boxShadow: `0 0 12px ${TIER_META[top.tier].color}` }} />
-              <div style={{ flex: 1, textAlign: 'left' }}><div className="mono" style={{ color: 'var(--ink)' }}>{x.id}{x.live && <span className="c-live">LIVE</span>}</div><div className="dim" style={{ fontSize: 12 }}>{TIER_META[top.tier].label} · {x.lang}</div></div>
+              <div style={{ flex: 1, textAlign: 'left' }}><div className="mono" style={{ color: 'var(--ink)' }}>{x.id}{x.live && <span className="c-live">{x.server ? 'RECORD' : 'LIVE'}</span>}</div><div className="dim" style={{ fontSize: 12 }}>{TIER_META[top.tier].label} · {x.lang}</div></div>
               {signed[x.id] ? <span className="c-ok">✓</span> : <span className="dim" style={{ fontSize: 11 }}>{Math.round((Date.now() - x.submitted) / 3600e3)}h</span>}
             </motion.button>)
         })}
@@ -300,7 +339,7 @@ function Queue({ cases, sel, setSel, signed, setSigned, onOpen }: { cases: Case[
           <div className="glass c-card">
             <div className="c-head">
               <div><div className="eyebrow">Shared by the man · one-time summary</div><h2 className="mono" style={{ fontSize: 28, marginTop: 6 }}>{c.id}</h2>
-                <div className="muted" style={{ fontSize: 13 }}>{c.live ? <>Sent from the man’s app just now · {c.lang} · age, nationality and education not shared</> : <>Age {c.age} · {c.group} · {c.lang} · {c.edu} · submitted {Math.round((Date.now() - c.submitted) / 3600e3)} h ago</>}</div></div>
+                <div className="muted" style={{ fontSize: 13 }}>{c.server ? <>{c.name} · {c.age} · {c.group} · {c.lang} · {c.edu} · sent {Math.max(0, Math.round((Date.now() - c.submitted) / 3600e3))} h ago</> : c.live ? <>Sent from the man’s app just now · {c.lang} · age, nationality and education not shared</> : <>Age {c.age} · {c.group} · {c.lang} · {c.edu} · submitted {Math.round((Date.now() - c.submitted) / 3600e3)} h ago</>}</div></div>
               <div className="c-decide">
                 {signed[c.id] ? <>
                   <span className="chip" style={{ color: 'var(--mint)' }}>✓ {signed[c.id] === 'approved' ? 'Referrals approved' : 'Changed and sent'}</span>
