@@ -73,40 +73,50 @@ export default function Landing() {
   }, [])
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 180])
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 60])
   const heroFade = useTransform(scrollYProgress, [0, 0.75], [1, 0])
+  const clipY = useTransform(scrollYProgress, [0, 1], [0, -140])
+  const clipS = useTransform(scrollYProgress, [0, 1], [1, 1.18])
+  const wordY = useTransform(scrollYProgress, [0, 1], [0, 120])
+  const shadowS = useTransform(scrollYProgress, [0, 0.6], [1, 0.55])
+  const shadowO = useTransform(scrollYProgress, [0, 0.6], [1, 0.15])
+  const heroOpen = useRef(0)
+  useMotionValueEvent(scrollYProgress, 'change', v => { heroOpen.current = Math.min(1, v * 1.6) * 0.75 })
   return (
     <div className="grain landing">
       <Cursor />
       <SiteNav />
 
-      <header className="l-hero" ref={heroRef}>
+      <header className="l-hero hx" ref={heroRef}>
         <div className="l-hero-bg"><Suspense fallback={null}><ThermalField /></Suspense></div>
-        <motion.div className="l-wrap" style={{ y: heroY, opacity: heroFade }}>
-          <div className="l-hero-grid">
-            <div>
-              <motion.span className="chip" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}><span className="dot" />Future Health 2026 · Fertility · Challenge 01</motion.span>
-              <Words as="h1" className="l-h1" text="Men’s fertility, measured *quietly.*" delay={0.15} />
-              <motion.p className="l-lede" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.8 }}>
-                Most men are assessed only after a year of trying, or after their wife’s tests. Alarzah is a private front door: an anonymous check-in, a small Clip that reads heat at home, and a Pod that makes the semen test possible without a clinic room. Fixed rules choose the next step. AI explains it. A clinician signs it off.
-              </motion.p>
-              <motion.div className="l-cta" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.75 }}>
-                <Magnetic to="/app" primary>Open the mobile app →</Magnetic>
-                <Magnetic to="/clinic">Clinician console</Magnetic>
-              </motion.div>
-              <motion.div className="l-proof" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
-                <span><b>0</b> images, ever</span><span><b>30/30</b> safety cases</span><span><b>AR · EN</b> voice</span>
-              </motion.div>
-            </div>
-            <div className="l-hero-3d">
-              <Suspense fallback={<div style={{ height: 600 }} />}><ClipScene height={600} /></Suspense>
-              <motion.div className="l-hud glass" style={{ top: 90, left: 0 }} animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity }}><span className="muted">Left pad</span><b style={{ color: 'var(--warm)' }}>34.9°</b></motion.div>
-              <motion.div className="l-hud glass" style={{ bottom: 150, right: 0 }} animate={{ y: [0, 8, 0] }} transition={{ duration: 6, repeat: Infinity }}><span className="muted">Right pad</span><b style={{ color: 'var(--cool)' }}>34.1°</b></motion.div>
-              <motion.div className="l-hud glass mono" style={{ bottom: 70, left: 30, color: 'var(--mint)' }} animate={{ y: [0, -6, 0] }} transition={{ duration: 7, repeat: Infinity }}>R-ASYM · upright 0.80° · lying 0.12°</motion.div>
-            </div>
+        <div className="l-wrap hx-wrap">
+          <motion.span className="chip hx-chip" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ opacity: heroFade }}><span className="dot" />Future Health 2026 · Fertility · Challenge 01</motion.span>
+          <div className="hx-stage">
+            <motion.div className="hx-word" aria-hidden initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }} style={{ y: wordY }}>ALARZAH</motion.div>
+            <motion.div className="hx-plinth" aria-hidden initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
+              <i className="hx-beam" /><i className="hx-top" /><motion.i className="hx-shadow" style={{ scale: shadowS, opacity: shadowO }} /><i className="hx-body" />
+            </motion.div>
+            <motion.div className="hx-clip" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} style={{ y: clipY, scale: clipS }}>
+              <Suspense fallback={null}><ClipScene height="100%" progress={heroOpen} /></Suspense>
+            </motion.div>
           </div>
-          <div className="l-scrollcue"><span />move your cursor: it’s a heat source</div>
-        </motion.div>
+          <motion.div className="hx-specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.9 }} style={{ opacity: heroFade }}>
+            <div><b>±0.1 °C</b><span>left and right, every minute</span></div><i />
+            <div><b>Upright vs lying</b><span>the pattern that matters</span></div><i />
+            <div><b>5 months</b><span>on one coin cell</span></div>
+          </motion.div>
+          <motion.div className="hx-copy" style={{ opacity: heroFade, y: heroY }}>
+            <Words as="h1" className="l-h1 hx-h1" text="Men’s fertility, measured *quietly.*" delay={0.5} />
+            <motion.p className="l-lede hx-lede" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.8 }}>
+              A private check-in, a small Clip that reads heat at home, and a Pod for the semen test without a clinic room. Fixed rules choose the next step. A clinician signs it off.
+            </motion.p>
+            <motion.div className="l-cta hx-cta" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.05 }}>
+              <Magnetic to="/app" primary>Open the mobile app →</Magnetic>
+              <Magnetic to="/clinic">Clinician console</Magnetic>
+            </motion.div>
+            <div className="l-scrollcue hx-cue"><span />move your cursor: it’s a heat source</div>
+          </motion.div>
+        </div>
       </header>
 
       <div className="marquee"><div>{Array(2).fill(0).map((_, k) => <span key={k}>
