@@ -11,7 +11,6 @@ import { Kind, KIND_LABEL, simulate } from '../engine/simulate'
 import { EMPTY_CHECKIN, TIER_META, TIER_ORDER, triage } from '../engine/rules'
 import './landing.css'
 
-const ClipScene = lazy(() => import('../components/ClipScene'))
 const ThermalField = lazy(() => import('../components/ThermalField'))
 const ease = [0.16, 1, 0.3, 1] as const
 const reveal = { initial: { opacity: 0, y: 40 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: '-12% 0px' }, transition: { duration: 0.9, ease } }
@@ -75,13 +74,9 @@ export default function Landing() {
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 60])
   const heroFade = useTransform(scrollYProgress, [0, 0.75], [1, 0])
-  const clipY = useTransform(scrollYProgress, [0, 1], [0, -140])
-  const clipS = useTransform(scrollYProgress, [0, 1], [1, 1.18])
+  const clipY = useTransform(scrollYProgress, [0, 1], [0, -90])
+  const clipS = useTransform(scrollYProgress, [0, 1], [1, 1.08])
   const wordY = useTransform(scrollYProgress, [0, 1], [0, 120])
-  const shadowS = useTransform(scrollYProgress, [0, 0.6], [1, 0.55])
-  const shadowO = useTransform(scrollYProgress, [0, 0.6], [1, 0.15])
-  const heroOpen = useRef(0)
-  useMotionValueEvent(scrollYProgress, 'change', v => { heroOpen.current = Math.min(1, v * 1.6) * 0.75 })
   return (
     <div className="grain landing">
       <Cursor />
@@ -93,11 +88,8 @@ export default function Landing() {
           <motion.span className="chip hx-chip" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ opacity: heroFade }}><span className="dot" />Future Health 2026 · Fertility · Challenge 01</motion.span>
           <div className="hx-stage">
             <motion.div className="hx-word" aria-hidden initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }} style={{ y: wordY }}>ALARZAH</motion.div>
-            <motion.div className="hx-plinth" aria-hidden initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 1.1, ease: [0.16, 1, 0.3, 1] }}>
-              <i className="hx-beam" /><i className="hx-top" /><motion.i className="hx-shadow" style={{ scale: shadowS, opacity: shadowO }} /><i className="hx-body" />
-            </motion.div>
-            <motion.div className="hx-clip" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 1.2, ease: [0.16, 1, 0.3, 1] }} style={{ y: clipY, scale: clipS }}>
-              <Suspense fallback={null}><ClipScene height="100%" progress={heroOpen} /></Suspense>
+            <motion.div className="hx-shot" initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: 0.25, duration: 1.3, ease: [0.16, 1, 0.3, 1] }} style={{ y: clipY, scale: clipS }}>
+              <img src="/brand/clip-pod-cutout.webp" alt="The Alarzah Clip and the Pod on a stone plinth (concept render)" />
             </motion.div>
           </div>
           <motion.div className="hx-specs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.9 }} style={{ opacity: heroFade }}>
@@ -105,6 +97,7 @@ export default function Landing() {
             <div><b>Upright vs lying</b><span>the pattern that matters</span></div><i />
             <div><b>5 months</b><span>on one coin cell</span></div>
           </motion.div>
+          <motion.p className="hx-note" style={{ opacity: heroFade }}>Concept render · hardware not built yet</motion.p>
           <motion.div className="hx-copy" style={{ opacity: heroFade, y: heroY }}>
             <Words as="h1" className="l-h1 hx-h1" text="Men’s fertility, measured *quietly.*" delay={0.5} />
             <motion.p className="l-lede hx-lede" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9, duration: 0.8 }}>
@@ -222,10 +215,10 @@ const STEPS = [
 ]
 function Inside() {
   const ref = useRef<HTMLDivElement>(null)
-  const prog = useRef(0)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] })
   const [step, setStep] = useState(0)
-  useMotionValueEvent(scrollYProgress, 'change', v => { prog.current = v; setStep(Math.min(STEPS.length - 1, Math.floor(v * STEPS.length * 0.999))) })
+  const [open, setOpen] = useState(0)
+  useMotionValueEvent(scrollYProgress, 'change', v => { setOpen(Math.min(1, v * 1.5)); setStep(Math.min(STEPS.length - 1, Math.floor(v * STEPS.length * 0.999))) })
   return (
     <section className="l-inside" id="inside" ref={ref}>
       <div className="l-inside-pin">
@@ -239,7 +232,7 @@ function Inside() {
             </motion.div>
             <div className="l-inside-bar"><Bar p={scrollYProgress} /></div>
           </div>
-          <Suspense fallback={null}><ClipScene height="78vh" progress={prog} labels /></Suspense>
+          <div className="l-inside-art"><ClipExploded open={open} width="100%" /></div>
         </div>
       </div>
     </section>
