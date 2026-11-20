@@ -61,7 +61,7 @@ if (!done('m_waiting')) {
 // console with the live case: same browser context as the app that sent it
 if (!done('d_console_live')) {
   const p = await ctx.newPage(); await p.setViewport({ width: 1600, height: 1000, deviceScaleFactor: 1.5 })
-  await p.goto(BASE + '/clinic?guest=1&nosplash=1', { waitUntil: 'networkidle0' }); await sleep(2500)
+  await p.goto(BASE + '/clinic/queue?guest=1&notour=1&nosplash=1', { waitUntil: 'networkidle0' }); await sleep(2500)
   await p.screenshot({ path: `${OUT}/d_console_live.png` }); console.log('desk d_console_live')
 }
 await desk('d_bench', '/clinic/benchmark')

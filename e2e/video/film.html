@@ -75,19 +75,17 @@
   <div class="abs mono" id="statSrc">Hjollund et al., 2002&nbsp;&nbsp;·&nbsp;&nbsp;99 men</div>
   <div id="stage3d">
     <div class="card" id="cConsole"><img src="assets/B_d_console_live.jpg"></div>
-    <div class="card" id="cClip"><img src="assets/clip.jpg"></div>
-    <div class="card" id="cPhone"><img src="assets/P_m_home.jpg"></div>
+    <div class="card" id="cClip"><img src="assets/clip_pod.jpg"></div>
+    <div class="card" id="cPhone"><img src="assets/P_m_today.jpg"></div>
   </div>
   <div class="abs" id="say"></div>
   <div class="abs mono" id="saySub"></div>
 </div>
 
 <div class="full" id="flash"></div>
-<svg class="abs" id="logo" viewBox="0 0 40 40">
-  <defs><filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-  <rect id="lgRect" x=".5" y=".5" width="39" height="39" rx="11" fill="#0e1b22" stroke="rgba(59,232,224,.35)" stroke-width=".4"/>
-  <path id="lgW1" d="M9 16c4-4 8 4 12 0s8-4 10 0" stroke="#3be8e0" stroke-width="2.6" fill="none" stroke-linecap="round" filter="url(#gl)"/>
-  <path id="lgW2" d="M9 23c4-4 8 4 12 0s8-4 10 0" stroke="#ffc15e" stroke-width="2.6" fill="none" stroke-linecap="round" filter="url(#gl)"/>
+<svg class="abs" id="logo" viewBox="8 6 48 50">
+  <defs><linearGradient id="mg" gradientUnits="userSpaceOnUse" x1="12" y1="52" x2="52" y2="12"><stop offset="0" stop-color="#3be8e0"/><stop offset=".55" stop-color="#7cf5b8"/><stop offset="1" stop-color="#ffc15e"/></linearGradient><filter id="gl" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation=".7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <g fill="none" stroke="url(#mg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#gl)"><path class="lp" d="M13.0 51 L29.6 12.2 Q32 10.0 34.4 12.2 L51.0 51" opacity="1.00"/><path class="lp" d="M17.6 51 L29.6 18.4 Q32 16.2 34.4 18.4 L46.4 51" opacity="0.83"/><path class="lp" d="M22.2 51 L29.6 24.6 Q32 22.4 34.4 24.6 L41.8 51" opacity="0.66"/><path class="lp" d="M26.8 51 L29.6 30.8 Q32 28.6 34.4 30.8 L37.2 51" opacity="0.49"/><path class="lp" d="M20.5 39h23" stroke-width="2.6"/></g>
 </svg>
 <div class="abs" id="word"></div>
 <div class="abs" id="tag">A quiet front door to <span>men’s reproductive health</span></div>
@@ -97,8 +95,8 @@
 <div id="outro" style="display:none">
   <div class="row pill3" id="o3" style="top:640px"><span class="w">Anonymous by default</span><em class="w">·</em><span class="w">Rules decide, AI explains</span><em class="w">·</em><span class="w">A clinician signs off</span></div>
   <div class="row" id="oBuilt" style="top:500px"><div class="mono" style="font-size:15px;color:var(--dim);margin-bottom:18px" id="oBuiltK">Built with</div>
-    <span class="chip w"><i></i>NVIDIA Nemotron</span><span class="chip w"><i style="background:var(--gold)"></i>Fixed rules R1–R8</span><span class="chip w"><i style="background:var(--gold)"></i>WHO 2021 limits</span><span class="chip w"><i></i>React · Vite · Three.js</span><span class="chip w"><i></i>PWA · Arabic + English</span><span class="chip w"><i></i>Vercel</span></div>
-  <div class="try" id="t1" style="left:150px"><div class="k mono">Try it</div><div class="v">alarzah.vercel.app</div></div>
+    <span class="chip w"><i style="background:var(--gold)"></i>Fixed rules R1–R8</span><span class="chip w"><i style="background:var(--gold)"></i>WHO 2021 limits</span><span class="chip w"><i></i>NVIDIA Nemotron explains</span><span class="chip w"><i></i>Consent-gated records</span><span class="chip w"><i></i>PWA · Arabic + English</span><span class="chip w"><i></i>Vercel · Turso</span></div>
+  <div class="try" id="t1" style="left:150px"><div class="k mono">Try it</div><div class="v">alarzah.vercel.app</div><div class="k" style="margin-top:14px;font-size:17px;color:var(--muted)">Demo login  <b style="color:var(--ink)">omar@demo.alarzah</b>  ·  clinician <b style="color:var(--ink)">mariam@demo.alarzah</b>  ·  password <b style="color:var(--glow)">alarzah-demo</b></div></div>
   <div class="try" id="t2" style="left:640px"><div class="k mono">The man’s app</div><div class="v"><span>/</span>app</div></div>
   <div class="try" id="t3" style="left:960px"><div class="k mono">Clinician console</div><div class="v"><span>/</span>clinic</div></div>
   <div class="qr" id="q1" style="left:1440px"><img src="assets/qr_site.png"></div><div class="qrl mono" id="q1l" style="left:1440px">Site</div>
@@ -184,7 +182,7 @@ function photo(el, t, a, b, x = 0) {
   const life = seg(t, a - .3, b + .3)
   el.style.transform = `scale(${1.14 - life * .1}) translateX(${x * life}px)`
 }
-const W1 = $('lgW1'), W2 = $('lgW2'); const LEN = W1.getTotalLength()
+const LP = [...document.querySelectorAll('#logo .lp')]; const LENS = LP.map(p => p.getTotalLength())
 function logo(t, a, { x = 960, y = 540, size = 220, fadeOut = null } = {}) {
   const L = $('logo')
   const p = seg(t, a, a + .9)
@@ -192,8 +190,7 @@ function logo(t, a, { x = 960, y = 540, size = 220, fadeOut = null } = {}) {
   const o = fadeOut ? seg(t, fadeOut[0], fadeOut[1]) : 0
   L.style.opacity = eo(seg(t, a, a + .3)) * (1 - o)
   L.style.transform = `scale(${lerp(.7, 1, eo5(seg(t, a, a + .8)))}) rotate(${lerp(-8, 0, eo5(seg(t, a, a + .9)))}deg)`
-  ;[W1, W2].forEach((w, i) => { const q = eo(seg(t, a + .15 + i * .14, a + .75 + i * .14)); w.style.strokeDasharray = LEN; w.style.strokeDashoffset = LEN * (1 - q) })
-  $('lgRect').style.opacity = eo(seg(t, a, a + .5))
+  LP.forEach((w, i) => { const q = eo(seg(t, a + .05 + i * .1, a + .7 + i * .1)); w.style.strokeDasharray = LENS[i]; w.style.strokeDashoffset = LENS[i] * (1 - q) })
 }
 function wordmark(spans, t, a, outAt) {
   spans.forEach((s, i) => {
@@ -206,7 +203,7 @@ function wordmark(spans, t, a, outAt) {
 // ---------- INTRO (14 s) ----------
 const L1 = words($('L1'), 'Long shifts in [the heat.]'), L2 = words($('L2'), 'A steroid cycle at [the gym.]'), L3 = words($('L3'), 'Not a word to [anyone.]'), L4 = words($('L4'), 'Men are assessed [late.|c]')
 const WM = words($('word'), 'Alarzah')
-const SAY = [['Measure ', 'it.', 'The Clip  ·  heat and left / right pattern, at home'], ['Ask ', 'it.', 'The app  ·  private, anonymous, Arabic + English'], ['Act on ', 'it.', 'The console  ·  a clinician signs off every next step']]
+const SAY = [['Measure ', 'it.', 'The Clip  ·  heat and left / right pattern, at home'], ['Ask ', 'it.', 'The app  ·  sign in or stay a guest, Arabic + English'], ['Act on ', 'it.', 'The console  ·  a clinician signs off every next step']]
 function intro(t) {
   // rings: strong in the opening, faint under photos, collapse into the logo
   const conv = eio(seg(t, 10.35, 11.25))
@@ -277,11 +274,13 @@ function outro(t) {
   fadeEl($('foot'), t, 4.2, 9.9, .6, 1.2, { y: 0, blur: 4 })
 }
 
+const STRETCH = Number(new URLSearchParams(location.search).get('stretch') || 1)
 window.render = t => {
+  t = t / STRETCH
   if (PART === 'intro') intro(t); else outro(t)
   grain(t)
 }
-window.DURATION = PART === 'intro' ? 14 : 10
+window.DURATION = (PART === 'intro' ? 14 : 10) * STRETCH
 if (PART === 'outro') { $('intro').style.display = 'none'; $('outro').style.display = '' }
 window.ready = Promise.all([document.fonts.ready, ...[...document.images].map(i => i.decode().catch(() => 0))])
 render(0)

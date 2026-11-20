@@ -12,7 +12,7 @@ const browser = await puppeteer.launch({
 })
 const page = await browser.newPage()
 await page.setViewport({ width: 1920, height: 1080, deviceScaleFactor: 1 })
-await page.goto(`http://localhost:5190/film.html?part=${part}`, { waitUntil: 'load' })
+await page.goto(`http://localhost:5190/film.html?part=${part}&stretch=${process.env.STRETCH || 1}`, { waitUntil: 'load' })
 await page.evaluate(() => window.ready)
 const dur = await page.evaluate(() => window.DURATION)
 

@@ -235,3 +235,10 @@
 .hx-shot img { -webkit-mask-image: linear-gradient(90deg, #000 84%, transparent 100%), linear-gradient(180deg, #000 90%, transparent 100%); -webkit-mask-composite: source-in;
   mask-image: linear-gradient(90deg, #000 84%, transparent 100%), linear-gradient(180deg, #000 90%, transparent 100%); mask-composite: intersect; }
 .hx-note { margin: 10px 0 0; font: 500 9.5px ui-monospace, monospace; letter-spacing: .12em; text-transform: uppercase; color: rgba(234,242,244,.38); }
+/* hero v3: image sized by viewport height so it never climbs into the chip; wordmark clearly visible */
+.hx-stage { margin-top: 26px; height: min(52vh, 480px); }
+.hx-shot { width: min(560px, 84vw, 70vh); margin-left: calc(min(560px, 84vw, 70vh) / -2); bottom: -3%; }
+.hx-word { top: 0; font-size: min(19vw, 300px, 30vh); color: rgba(234,242,244,.11); -webkit-text-stroke: 1px rgba(234,242,244,.16);
+  background: linear-gradient(180deg, rgba(234,242,244,.26), rgba(234,242,244,.04) 90%); -webkit-background-clip: text; background-clip: text; }
+@media (max-width: 640px) { .hx-shot { width: 84vw; margin-left: -42vw; } .hx-word { font-size: 19vw; top: 4%; } }
+@media (max-width: 640px) { .hx-stage { height: 330px; margin-top: 14px; } .hx-word { top: 0; } }
