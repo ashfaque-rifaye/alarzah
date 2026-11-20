@@ -392,7 +392,7 @@ function Header({ title, sub, kicker }: { title: string; sub?: string; kicker?: 
   return (
     <>
       <div className="m-top">
-        <div className="m-id"><span className="m-id-code mono">ALZ-{s.anonId}</span><span className="m-id-safe">{I.lock}{t.onDevice}</span></div>
+        <div className="m-id"><span className="m-id-code mono">ALZ-{s.anonId}</span><span className="m-id-safe">{I.lock}{s.account && s.profile?.consent?.backup ? (s.lang === 'ar' ? 'نسخة مشفّرة' : 'Encrypted backup') : t.onDevice}</span></div>
         <div className="m-row" style={{ gap: 8 }}>
           <button className="m-lang" onClick={() => set({ lang: s.lang === 'en' ? 'ar' : 'en' })} aria-label={t.lang}>{s.lang === 'en' ? 'ع' : 'EN'}</button>
           <button className="m-avatar-btn" onClick={openProfile} aria-label="Your profile"><Avatar name={s.profile?.alias || s.account?.name || 'Guest'} tone={s.profile?.avatar ?? 'sky'} size={36} /></button>

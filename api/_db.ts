@@ -47,6 +47,7 @@ export async function seedOne(id: string, insertUser = false) {
   const state = { ...s.state, demoProfile: s.id }
   await c.execute({ sql: 'INSERT OR REPLACE INTO profiles (user_id, profile_json, state_json, updated_at) VALUES (?,?,?,?)', args: [s.id, JSON.stringify(s.profile), JSON.stringify(state), now] })
   await c.execute({ sql: 'DELETE FROM cases WHERE user_id = ?', args: [s.id] })
+  await c.execute({ sql: 'DELETE FROM access_log WHERE patient_id = ?', args: [s.id] })
   const st = s.state as any
   if (st?.sharedAt) {
     const checkin: Record<string, unknown> = { ...EMPTY_CHECKIN }

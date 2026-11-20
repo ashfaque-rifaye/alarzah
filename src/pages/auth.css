@@ -103,3 +103,7 @@
 .m-avatar-btn { border-radius: 50%; padding: 0; line-height: 0; box-shadow: 0 0 0 2px rgba(255,255,255,.08); }
 .au-demo-row > :first-child { margin-inline-start: 22px; }
 .au-demo-row > :last-child { margin-inline-end: 22px; }
+/* the sheet header's span style must not recolour or shrink the avatar initial */
+.ps-head .av { display: inline-grid; color: #04131a; overflow: visible; }
+/* keep the demo profiles above the fold on a standard phone */
+@media (max-height: 880px) { .au-hero { height: 150px; margin-top: 8px; } .au-demos { margin-top: 12px; } }
